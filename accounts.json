@@ -1,0 +1,134 @@
+[
+  {
+    "email": "0558d2c6a83933a4@zxy.com",
+    "password": "EhssmhCZN7fCMyVlA1!",
+    "adPoints": 10,
+    "adsCompleted": 5,
+    "isReady": true,
+    "cookies": [
+      [
+        "session",
+        "eyJhbGciOiJIUzI1NiJ9.eyJ1c2VySWQiOiI3OWZiZTg5MWZlNjQ1OWU4Mzc2OTE0YjgwN2E0ZDk4YSIsImVtYWlsIjoiMDU1OGQyYzZhODM5MzNhNEB6eHkuY29tIiwiaWF0IjoxNzg3MzExNjgxLCJleHAiOjE3ODczMTM0ODF9.PQIRtnfBqnjbxBuVpvJczG-sAcbmo_CLrOdmI-pvwzs"
+      ],
+      [
+        "ads_session",
+        "eyJhbGciOiJIUzI1NiJ9.eyJ1c2VySWQiOiI3OWZiZTg5MWZlNjQ1OWU4Mzc2OTE0YjgwN2E0ZDk4YSIsImNvdW50Ijo1LCJsYXN0Vmlld0F0IjoxNzg3MzExNzQ1NDczLCJpYXQiOjE3ODczMTE3NDUsImV4cCI6MTc4NzMxNTM0NX0.ecUo5lHpJPnuk2WP74iLbAa32wogNhi_B8Yl_OQP5yw"
+      ]
+    ],
+    "stage": "ready",
+    "createdAt": "2026-08-21T11:29:03.938Z",
+    "updatedAt": "2026-08-21T11:29:03.938Z"
+  },
+  {
+    "email": "ad3698cdc6d1569a@zxy.com",
+    "password": "5DM0eLxiorJXzeaMA1!",
+    "adPoints": 10,
+    "adsCompleted": 5,
+    "isReady": true,
+    "cookies": [
+      [
+        "session",
+        "eyJhbGciOiJIUzI1NiJ9.eyJ1c2VySWQiOiI3OWFmZGM1NzU1MTdiNDMyNzZhOGI0MjViYWMxY2Q1NyIsImVtYWlsIjoiYWQzNjk4Y2RjNmQxNTY5YUB6eHkuY29tIiwiaWF0IjoxNzg3MzExNTAwLCJleHAiOjE3ODczMTMzMDB9.hS-lD2ojlL3xBzyvSMu3edczTjKduAbotRKxFKD-26U"
+      ],
+      [
+        "ads_session",
+        "eyJhbGciOiJIUzI1NiJ9.eyJ1c2VySWQiOiI3OWFmZGM1NzU1MTdiNDMyNzZhOGI0MjViYWMxY2Q1NyIsImNvdW50Ijo1LCJsYXN0Vmlld0F0IjoxNzg3MzExNTY1MDY3LCJpYXQiOjE3ODczMTE1NjUsImV4cCI6MTc4NzMxNTE2NX0.QsaDbgMTVp4hFX53p6dJ_g1YcVB-AkIF2TDFGvbSd6w"
+      ]
+    ],
+    "stage": "ready",
+    "createdAt": "2026-08-21T11:26:03.544Z",
+    "updatedAt": "2026-08-21T11:26:03.544Z"
+  },
+  {
+    "email": "9f303d991f94bf8e@zxy.com",
+    "password": "LB4dgUj1dEVGFZ4pA1!",
+    "adPoints": 10,
+    "adsCompleted": 5,
+    "isReady": true,
+    "cookies": [
+      [
+        "session",
+        "eyJhbGciOiJIUzI1NiJ9.eyJ1c2VySWQiOiJkNzgwYmQ2MzYxYjYzOGU0N2M5M2RhOWUyMjU2ODhlZiIsImVtYWlsIjoiOWYzMDNkOTkxZjk0YmY4ZUB6eHkuY29tIiwiaWF0IjoxNzg3MzExMzI0LCJleHAiOjE3ODczMTMxMjR9.HKTpTTvEgGRTK5QYNzgUBL4cEppvC1kkn9KJ4QnbDxA"
+      ],
+      [
+        "ads_session",
+        "eyJhbGciOiJIUzI1NiJ9.eyJ1c2VySWQiOiJkNzgwYmQ2MzYxYjYzOGU0N2M5M2RhOWUyMjU2ODhlZiIsImNvdW50Ijo1LCJsYXN0Vmlld0F0IjoxNzg3MzExMzg4OTgzLCJpYXQiOjE3ODczMTEzODgsImV4cCI6MTc4NzMxNDk4OH0.LSPnsOGuGCrtiv546SRe5oYPpzFeP1kh8X5VmH9i3uo"
+      ]
+    ],
+    "stage": "ready",
+    "createdAt": "2026-08-21T11:23:07.450Z",
+    "updatedAt": "2026-08-21T11:23:07.451Z"
+  },
+  {
+    "email": "162b9261c0fbd408@zxy.com",
+    "password": "mRqZ95986dxsMVAQA1!",
+    "adPoints": 10,
+    "adsCompleted": 5,
+    "cookies": [
+      [
+        "session",
+        "eyJhbGciOiJIUzI1NiJ9.eyJ1c2VySWQiOiJiMDRjNjU5OWZmMjZiMTRhYTEwMGUxMWQ3ZjI2ZGMyYyIsImVtYWlsIjoiMTYyYjkyNjFjMGZiZDQwOEB6eHkuY29tIiwiaWF0IjoxNzg3MzA5OTE4LCJleHAiOjE3ODczMTE3MTh9.KX4V2owXCwdomkqI7dXmvkjPOPJRZw23Pp2VQKfUMEE"
+      ],
+      [
+        "ads_session",
+        "eyJhbGciOiJIUzI1NiJ9.eyJ1c2VySWQiOiJiMDRjNjU5OWZmMjZiMTRhYTEwMGUxMWQ3ZjI2ZGMyYyIsImNvdW50Ijo1LCJsYXN0Vmlld0F0IjoxNzg3MzA5OTk2OTY3LCJpYXQiOjE3ODczMDk5OTYsImV4cCI6MTc4NzMxMzU5Nn0.HRTYajnydkYs74hGLDBqerfcehb_x-ISw7u2dNeotDY"
+      ]
+    ],
+    "stage": "ready",
+    "createdAt": "2026-08-21T10:59:55.448Z",
+    "updatedAt": "2026-08-21T11:11:50.434Z"
+  },
+  {
+    "email": "508df821b0fccc21@zxy.com",
+    "password": "NsjUFDYi/zQ/4qvQA1!",
+    "adPoints": 5,
+    "adsCompleted": 5,
+    "cookies": [
+      [
+        "session",
+        "eyJhbGciOiJIUzI1NiJ9.eyJ1c2VySWQiOiJlMGVmNjU2MTYwOGU1NGM3ZGI1ZmJhZjQ4MTNjYzExNiIsImVtYWlsIjoiNTA4ZGY4MjFiMGZjY2MyMUB6eHkuY29tIiwiaWF0IjoxNzg3MzA5NzM5LCJleHAiOjE3ODczMTE1Mzl9.xM54mR7YZgrpVZLZup0XhaLjk7M8TsWyPmFzP0Ar7vM"
+      ],
+      [
+        "ads_session",
+        "eyJhbGciOiJIUzI1NiJ9.eyJ1c2VySWQiOiJlMGVmNjU2MTYwOGU1NGM3ZGI1ZmJhZjQ4MTNjYzExNiIsImNvdW50Ijo1LCJsYXN0Vmlld0F0IjoxNzg3MzA5ODE4NDc0LCJpYXQiOjE3ODczMDk4MTgsImV4cCI6MTc4NzMxMzQxOH0.KjWFXIpPogW0kc3SNb0HD4dlY47HnAGpHanDp2ekXpw"
+      ]
+    ],
+    "stage": "ready",
+    "createdAt": "2026-08-21T10:56:56.943Z",
+    "updatedAt": "2026-08-21T10:56:56.943Z"
+  },
+  {
+    "email": "76796335ae8cfd87@zxy.com",
+    "password": "+ZRwhj3XZGPUI3wNA1!",
+    "adPoints": 5,
+    "adsCompleted": 5,
+    "cookies": [
+      [
+        "session",
+        "eyJhbGciOiJIUzI1NiJ9.eyJ1c2VySWQiOiIzNmU3NGM5Zjc5YzUyNTU3MDdiZDA0YjliYzNlOGY4ZCIsImVtYWlsIjoiNzY3OTYzMzVhZThjZmQ4N0B6eHkuY29tIiwiaWF0IjoxNzg3MzA5NTYyLCJleHAiOjE3ODczMTEzNjJ9.yqrgclDc7ZjiDdABjnkEY7RqebVDaEglkATAvbEuW2g"
+      ],
+      [
+        "ads_session",
+        "eyJhbGciOiJIUzI1NiJ9.eyJ1c2VySWQiOiIzNmU3NGM5Zjc5YzUyNTU3MDdiZDA0YjliYzNlOGY4ZCIsImNvdW50Ijo1LCJsYXN0Vmlld0F0IjoxNzg3MzA5NjQwOTk1LCJpYXQiOjE3ODczMDk2NDAsImV4cCI6MTc4NzMxMzI0MH0.JLaWjJ0WvCvJJiYaaa51F4HcR1YcDGCEEL8gJfxAyLc"
+      ]
+    ],
+    "stage": "ready",
+    "createdAt": "2026-08-21T10:53:59.470Z",
+    "updatedAt": "2026-08-21T10:53:59.470Z"
+  },
+  {
+    "email": "a9d77240b61714b8@zxy.com",
+    "password": "UvNxPH8j428xb3ggA1!",
+    "adPoints": 0,
+    "stage": "done",
+    "adsCompleted": 0,
+    "createdAt": "2026-08-21T02:20:00.000Z",
+    "updatedAt": "2026-08-21T10:53:36.511Z",
+    "cookies": [
+      [
+        "session",
+        "eyJhbGciOiJIUzI1NiJ9.eyJ1c2VySWQiOiI2OTJlNjBjYjFhMTMzZGNjMjYwMzMwNDg2ZDhiODA1YiIsImVtYWlsIjoiYTlkNzcyNDBiNjE3MTRiOEB6eHkuY29tIiwiaWF0IjoxNzg3MzA5NDE1LCJleHAiOjE3ODczMTEyMTV9.93FkrCQFWG88wqIQq8wR40EG9MyaN3rBo4A6dc_5zyQ"
+      ]
+    ]
+  }
+]

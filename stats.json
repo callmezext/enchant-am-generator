@@ -1,0 +1,206 @@
+{
+  "dailyLimitPerUser": 5,
+  "totalActivations": 3277,
+  "recentDurations": [
+    40.2,
+    39.5,
+    36.5,
+    38.2,
+    37.4,
+    20,
+    19.7,
+    8.7,
+    8.7,
+    10.2,
+    79.6,
+    52.3,
+    43.4,
+    50.4,
+    56.2,
+    48.4,
+    73.2,
+    32.5,
+    30.5,
+    32.7
+  ],
+  "dailyUsage": {
+    "2026-08-22": {
+      "gunturafandy5@gmail.com": 12,
+      "lordlime90@gmail.com": 1,
+      "nicsukamieayam@gmail.com": 1
+    },
+    "2026-08-23": {
+      "gunturafandy5@gmail.com": 6
+    },
+    "2026-08-24": {},
+    "2026-08-25": {
+      "zefynw@gmail.com": 2,
+      "gunturafandy5@gmail.com": 1
+    }
+  },
+  "history": [
+    {
+      "timestamp": "2026-08-25T03:30:43.497Z",
+      "userEmail": "gunturafandy5@gmail.com",
+      "targetEmail": "ahah@enchant.id",
+      "mode": "auto",
+      "durationSeconds": 32.7
+    },
+    {
+      "timestamp": "2026-08-24T18:16:18.323Z",
+      "userEmail": "zefynw@gmail.com",
+      "targetEmail": "am_en62xj@enchant.id",
+      "mode": "auto",
+      "durationSeconds": 30.5
+    },
+    {
+      "timestamp": "2026-08-24T17:12:57.982Z",
+      "userEmail": "zefynw@gmail.com",
+      "targetEmail": "am_en62xj@enchant.id",
+      "mode": "auto",
+      "durationSeconds": 32.5
+    },
+    {
+      "timestamp": "2026-08-23T10:19:32.325Z",
+      "userEmail": "gunturafandy5@gmail.com",
+      "targetEmail": "am408799ed@enchant.id",
+      "mode": "auto",
+      "durationSeconds": 73.2
+    },
+    {
+      "timestamp": "2026-08-23T04:55:58.912Z",
+      "userEmail": "gunturafandy5@gmail.com",
+      "targetEmail": "am9309c974@enchant.id",
+      "mode": "auto",
+      "durationSeconds": 48.4
+    },
+    {
+      "timestamp": "2026-08-23T04:45:36.559Z",
+      "userEmail": "gunturafandy5@gmail.com",
+      "targetEmail": "amfadd1cd9@enchant.id",
+      "mode": "auto",
+      "durationSeconds": 56.2
+    },
+    {
+      "timestamp": "2026-08-23T04:31:25.676Z",
+      "userEmail": "gunturafandy5@gmail.com",
+      "targetEmail": "am02eb0caf@enchant.id",
+      "mode": "auto",
+      "durationSeconds": 50.4
+    },
+    {
+      "timestamp": "2026-08-23T04:30:30.079Z",
+      "userEmail": "gunturafandy5@gmail.com",
+      "targetEmail": "am63bf9ff7@enchant.id",
+      "mode": "auto",
+      "durationSeconds": 43.4
+    },
+    {
+      "timestamp": "2026-08-23T04:23:00.889Z",
+      "userEmail": "gunturafandy5@gmail.com",
+      "targetEmail": "nakano_realtest@enchant.id",
+      "mode": "auto",
+      "durationSeconds": 52.3
+    },
+    {
+      "timestamp": "2026-08-22T11:11:15.991Z",
+      "userEmail": "nicsukamieayam@gmail.com",
+      "targetEmail": "bawangrebus15@gmail.com",
+      "mode": "manual",
+      "durationSeconds": 79.6
+    },
+    {
+      "timestamp": "2026-08-22T05:36:39.251Z",
+      "userEmail": "lordlime90@gmail.com",
+      "targetEmail": "digital.boy@enchant.id",
+      "mode": "auto",
+      "durationSeconds": 10.2
+    },
+    {
+      "timestamp": "2026-08-22T04:56:24.565Z",
+      "userEmail": "gunturafandy5@gmail.com",
+      "targetEmail": "chloe@enchant.id",
+      "mode": "auto",
+      "durationSeconds": 8.7
+    },
+    {
+      "timestamp": "2026-08-22T04:52:25.274Z",
+      "userEmail": "gunturafandy5@gmail.com",
+      "targetEmail": "am7edd6a70@enchant.id",
+      "mode": "auto",
+      "durationSeconds": 8.7
+    },
+    {
+      "timestamp": "2026-08-22T04:45:40.682Z",
+      "userEmail": "gunturafandy5@gmail.com",
+      "targetEmail": "amd6558fc6@enchant.id",
+      "mode": "auto",
+      "durationSeconds": 19.7
+    },
+    {
+      "timestamp": "2026-08-22T04:43:19.650Z",
+      "userEmail": "gunturafandy5@gmail.com",
+      "targetEmail": "malas@enchant.id",
+      "mode": "auto",
+      "durationSeconds": 20
+    },
+    {
+      "timestamp": "2026-08-22T04:18:56.184Z",
+      "userEmail": "gunturafandy5@gmail.com",
+      "targetEmail": "kore@enchant.id",
+      "mode": "auto",
+      "durationSeconds": 37.4
+    },
+    {
+      "timestamp": "2026-08-22T04:08:38.169Z",
+      "userEmail": "gunturafandy5@gmail.com",
+      "targetEmail": "nakano@enchant.id",
+      "mode": "auto",
+      "durationSeconds": 38.2
+    },
+    {
+      "timestamp": "2026-08-22T03:59:18.135Z",
+      "userEmail": "gunturafandy5@gmail.com",
+      "targetEmail": "nino@enchant.id",
+      "mode": "auto",
+      "durationSeconds": 36.5
+    },
+    {
+      "timestamp": "2026-08-22T03:45:15.274Z",
+      "userEmail": "gunturafandy5@gmail.com",
+      "targetEmail": "mamah@enchant.id",
+      "mode": "auto",
+      "durationSeconds": 39.5
+    },
+    {
+      "timestamp": "2026-08-22T03:35:16.919Z",
+      "userEmail": "gunturafandy5@gmail.com",
+      "targetEmail": "amf2919808@enchant.id",
+      "mode": "auto",
+      "durationSeconds": 40.2
+    },
+    {
+      "timestamp": "2026-08-22T03:11:44.477Z",
+      "userEmail": "gunturafandy5@gmail.com",
+      "targetEmail": "am154cb170@enchant.id",
+      "mode": "auto",
+      "durationSeconds": 38.1
+    },
+    {
+      "timestamp": "2026-08-22T02:26:31.996Z",
+      "userEmail": "gunturafandy5@gmail.com",
+      "targetEmail": "pro@enchant.id",
+      "mode": "auto",
+      "durationSeconds": 37.1
+    },
+    {
+      "timestamp": "2026-08-22T02:21:25.428Z",
+      "userEmail": "gunturafandy5@gmail.com",
+      "targetEmail": "am6f9f80d4@enchant.id",
+      "mode": "auto",
+      "durationSeconds": 37.3
+    }
+  ],
+  "bannedIPs": {},
+  "securityLogs": []
+}

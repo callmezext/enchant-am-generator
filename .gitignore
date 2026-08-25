@@ -1,0 +1,9 @@
+node_modules/
+.wabot_auth/
+.wwebjs_cache/
+.arkana_profile/
+*.log
+.env
+*.tar.gz
+*.tmp
+.DS_Store

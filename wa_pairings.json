@@ -1,0 +1,83 @@
+{
+  "pairings": {
+    "gunturafandy5@gmail.com": {
+      "userEmail": "gunturafandy5@gmail.com",
+      "mailbox": "amfadd1cd9@enchant.id",
+      "phone": "222449425756260",
+      "chatId": "222449425756260@lid",
+      "pairedAt": "2026-08-23T04:45:48.210Z"
+    }
+  },
+  "mailboxToPhone": {
+    "amfadd1cd9": [
+      {
+        "phone": "222449425756260",
+        "chatId": "222449425756260@lid"
+      }
+    ],
+    "am9309c974": [
+      {
+        "phone": "222449425756260",
+        "chatId": "222449425756260@lid"
+      }
+    ],
+    "am408799ed": [
+      {
+        "phone": "222449425756260",
+        "chatId": "222449425756260@lid"
+      }
+    ],
+    "ahah": [
+      {
+        "phone": "222449425756260",
+        "chatId": "222449425756260@lid"
+      }
+    ]
+  },
+  "userToMailboxes": {
+    "gunturafandy5@gmail.com": [
+      "amfadd1cd9",
+      "am9309c974",
+      "am408799ed",
+      "ahah"
+    ],
+    "zzerlqwerty@gmail.com": [
+      "ryezxzz@gmail.com"
+    ],
+    "zefynw@gmail.com": [
+      "am_en62xj"
+    ]
+  },
+  "mailboxToUser": {
+    "amfadd1cd9": "gunturafandy5@gmail.com",
+    "am9309c974": "gunturafandy5@gmail.com",
+    "am408799ed": "gunturafandy5@gmail.com",
+    "ryezxzz@gmail.com": "zzerlqwerty@gmail.com",
+    "am_en62xj": "zefynw@gmail.com",
+    "ahah": "gunturafandy5@gmail.com"
+  },
+  "pendingTokens": {},
+  "sentLogs": [
+    {
+      "timestamp": "2026-08-25T03:58:36.363Z",
+      "phone": "222449425756260",
+      "mailbox": "ahah@enchant.id",
+      "type": "MAGIC_LINK",
+      "status": "SUCCESS"
+    },
+    {
+      "timestamp": "2026-08-23T04:57:19.504Z",
+      "phone": "222449425756260",
+      "mailbox": "am9309c974@enchant.id",
+      "type": "MAGIC_LINK",
+      "status": "SUCCESS"
+    },
+    {
+      "timestamp": "2026-08-23T04:46:37.777Z",
+      "phone": "222449425756260",
+      "mailbox": "amfadd1cd9@enchant.id",
+      "type": "MAGIC_LINK",
+      "status": "SUCCESS"
+    }
+  ]
+}
