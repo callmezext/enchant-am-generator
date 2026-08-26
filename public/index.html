@@ -1297,6 +1297,28 @@
       gap: 12px;
       justify-content: center;
       flex-wrap: wrap;
+    .bulk-chip-btn {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-subtle);
+      border-radius: 8px;
+      color: var(--text-dim);
+      font-family: var(--font-tech);
+      font-size: 0.85rem;
+      font-weight: 700;
+      padding: 8px 14px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+    .bulk-chip-btn:hover {
+      border-color: var(--cyan);
+      color: #fff;
+      background: var(--cyan-dim);
+    }
+    .bulk-chip-btn.active {
+      background: linear-gradient(135deg, rgba(0, 242, 254, 0.2), rgba(138, 43, 226, 0.25));
+      border-color: var(--cyan);
+      color: var(--cyan);
+      box-shadow: 0 0 10px var(--cyan-glow);
     }
 
     /* ================= INTEGRATED ENCHANT MAIL STYLES ================= */
@@ -2039,6 +2061,13 @@
           <span>Aktivasi Otomatis</span>
         </button>
 
+        <button class="nav-btn" onclick="switchView('bulk')" id="nav-bulk">
+          <!-- Multi-Zap / Fast Bulk Icon -->
+          <svg class="icon" style="color: var(--cyan);" viewBox="0 0 24 24"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+          <span>⚡ Bulk Generator</span>
+          <span class="cyber-badge cyan" style="margin-left: auto; font-size: 0.6rem;">FAST</span>
+        </button>
+
         <button class="nav-btn" onclick="switchView('manual')" id="nav-manual">
           <!-- User / Shield Icon -->
           <svg class="icon" viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
@@ -2177,14 +2206,18 @@
             <div class="tech-notice">
               <svg class="icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
               <div class="notice-text">
-                Pilih <b>Aktivasi Otomatis</b> untuk instant random <code>@enchant.id</code> (bisa custom nama) dalam 1 klik, atau gunakan <b>Aktivasi Manual</b> jika ingin menautkan lisensi ke email pribadi (Gmail, Yahoo, Temp Mail).
+                Pilih <b>Aktivasi Otomatis</b> untuk 1 akun instant, <b>⚡ Bulk Generator</b> untuk multi-akun cepat (paralel), atau <b>Aktivasi Manual</b> jika ingin menautkan lisensi ke email pribadi.
               </div>
             </div>
 
-            <div style="display: flex; gap: 16px; flex-wrap: wrap;">
+            <div style="display: flex; gap: 14px; flex-wrap: wrap;">
               <button class="cyber-btn cyber-btn-primary" onclick="switchView('auto')">
                 <svg class="icon" viewBox="0 0 24 24"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
-                <span>Mulai Aktivasi Otomatis</span>
+                <span>1-Klik Otomatis</span>
+              </button>
+              <button class="cyber-btn cyber-btn-emerald" onclick="switchView('bulk')" style="background: linear-gradient(135deg, rgba(0, 242, 254, 0.2), rgba(0, 255, 136, 0.25)); border-color: var(--cyan);">
+                <svg class="icon" style="color: var(--cyan);" viewBox="0 0 24 24"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+                <span>⚡ Bulk Generator (Multi-Akun)</span>
               </button>
               <button class="cyber-btn cyber-btn-outline" onclick="switchView('manual')">
                 <svg class="icon" viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
@@ -2314,6 +2347,162 @@
                   <span>Aktivasi Akun Lain</span>
                 </button>
               </div>
+            </div>
+
+          </div>
+        </section>
+
+
+        <!-- ================= 2B. VIEW BULK GENERATOR ================= -->
+        <section class="view-panel" id="view-bulk">
+          <div class="cyber-card">
+            
+            <!-- Setup Form -->
+            <div id="bulk-form-container">
+              <div class="card-header-flex">
+                <div class="section-title">
+                  <svg class="icon" style="color: var(--cyan);" viewBox="0 0 24 24"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+                  <span>⚡ Bulk Generator (Multi-Akun Paralel)</span>
+                </div>
+                <div class="cyber-badge cyan">PARALLEL ENGINE</div>
+              </div>
+
+              <div class="tech-notice">
+                <svg class="icon" viewBox="0 0 24 24"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+                <div class="notice-text">
+                  Eksekusi pembuatan banyak akun <b>@enchant.id</b> sekaligus secara <b>paralel (multi-threaded)</b>. Setiap akun langsung terinjeksi lisensi <b>Play Billing 1 Tahun</b> dengan kecepatan optimal.
+                </div>
+              </div>
+
+              <!-- Count Selector -->
+              <div class="form-group" style="margin-top: 20px;">
+                <label class="form-label">Jumlah Akun yang Ingin Dibuat</label>
+                <div style="display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 10px;">
+                  <button type="button" class="bulk-chip-btn" onclick="selectBulkCount(3)">3 Akun</button>
+                  <button type="button" class="bulk-chip-btn active" onclick="selectBulkCount(5)">5 Akun</button>
+                  <button type="button" class="bulk-chip-btn" onclick="selectBulkCount(10)">10 Akun</button>
+                  <button type="button" class="bulk-chip-btn" onclick="selectBulkCount(15)">15 Akun</button>
+                  <button type="button" class="bulk-chip-btn" onclick="selectBulkCount(20)">20 Akun</button>
+                </div>
+                <input type="number" class="cyber-input" id="bulk-count-input" value="5" min="1" max="25" style="max-width: 220px;" placeholder="Jumlah akun (1-25)">
+              </div>
+
+              <!-- Prefix Selector -->
+              <div class="form-group" style="margin-top: 16px;">
+                <label class="form-label">Prefix / Awalan Nama Email (Opsional)</label>
+                <div style="display: flex; align-items: stretch;">
+                  <input type="text" class="cyber-input" id="bulk-prefix-input" value="am_" placeholder="contoh: am_, order_, vip_" style="border-top-right-radius: 0; border-bottom-right-radius: 0;">
+                  <div style="background: var(--bg-surface); border: 1.5px solid var(--border-subtle); border-left: none; border-top-right-radius: 10px; border-bottom-right-radius: 10px; padding: 0 16px; display: flex; align-items: center; font-family: var(--font-mono); font-size: 0.85rem; color: var(--cyan); font-weight: 700; white-space: nowrap;">
+                    [random]@enchant.id
+                  </div>
+                </div>
+                <div style="font-family: var(--font-mono); font-size: 0.68rem; color: var(--text-muted); margin-top: 6px;">
+                  * Format hasil: <code>am_a1b2c1@enchant.id</code>, <code>am_a1b2c2@enchant.id</code>, dst.
+                </div>
+              </div>
+
+              <!-- Concurrency setting -->
+              <div class="form-group" style="margin-top: 16px;">
+                <label class="form-label">Kecepatan Paralel (Concurrency Threads)</label>
+                <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                  <button type="button" class="bulk-chip-btn" onclick="selectBulkConcurrency(2)">2 Threads (Ringan)</button>
+                  <button type="button" class="bulk-chip-btn active" onclick="selectBulkConcurrency(3)">3 Threads (Optimal)</button>
+                  <button type="button" class="bulk-chip-btn" onclick="selectBulkConcurrency(4)">4 Threads (Ultra Cepat)</button>
+                  <button type="button" class="bulk-chip-btn" onclick="selectBulkConcurrency(5)">5 Threads (Maksimal)</button>
+                </div>
+                <input type="hidden" id="bulk-concurrency-input" value="3">
+              </div>
+
+              <div style="margin-top: 24px;">
+                <button class="cyber-btn cyber-btn-primary" id="btn-run-bulk" onclick="executeBulkActivation()" style="width: 100%; padding: 18px; background: linear-gradient(135deg, #00f2fe, #8a2be2);">
+                  <div class="btn-spinner"></div>
+                  <div class="btn-text" style="display: flex; align-items: center; gap: 8px;">
+                    <svg class="icon" viewBox="0 0 24 24"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+                    <span>EKSEKUSI BULK GENERATOR (PARALEL)</span>
+                  </div>
+                </button>
+              </div>
+            </div>
+
+            <!-- Terminal Progress HUD -->
+            <div class="terminal-hud" id="bulk-terminal">
+              <div class="terminal-header">
+                <div style="display: flex; align-items: center; gap: 8px;">
+                  <div class="status-dot"></div>
+                  <span id="bulk-status-msg">EXECUTING BULK PIPELINE...</span>
+                </div>
+                <span id="bulk-progress-badge">0% COMPLETED</span>
+              </div>
+
+              <!-- Progress Bar -->
+              <div style="width: 100%; height: 6px; background: rgba(255,255,255,0.08); border-radius: 4px; overflow: hidden; margin-bottom: 12px;">
+                <div id="bulk-progress-bar" style="width: 0%; height: 100%; background: linear-gradient(90deg, var(--cyan), var(--emerald)); transition: width 0.3s ease; box-shadow: 0 0 10px var(--cyan);"></div>
+              </div>
+
+              <div class="terminal-logs" id="bulk-logs"></div>
+            </div>
+
+            <!-- Bulk Result Matrix -->
+            <div class="result-matrix" id="bulk-result">
+              <div class="result-status-icon">
+                <svg class="icon" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+              </div>
+              <div class="result-title">BULK GENERATOR SELESAI</div>
+              <div class="result-subtitle" id="bulk-res-summary">Semua akun lisensi siap digunakan.</div>
+
+              <div class="spec-grid" style="margin-bottom: 24px;">
+                <div class="spec-box">
+                  <div class="spec-box-label">Total Akun Sukses</div>
+                  <div class="spec-box-val emerald" id="bulk-res-success">0 / 0</div>
+                </div>
+                <div class="spec-box">
+                  <div class="spec-box-label">Total Waktu Proses</div>
+                  <div class="spec-box-val cyan" id="bulk-res-duration">0s</div>
+                </div>
+                <div class="spec-box">
+                  <div class="spec-box-label">Rata-Rata per Akun</div>
+                  <div class="spec-box-val amber" id="bulk-res-avg">0s / akun</div>
+                </div>
+              </div>
+
+              <!-- Action Bar for Copy / Export -->
+              <div style="display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 18px;">
+                <button class="cyber-btn cyber-btn-primary" onclick="copyAllBulkEmails()" style="font-size: 0.8rem; padding: 10px 18px;">
+                  <svg class="icon" viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                  <span>Salin Semua Email</span>
+                </button>
+                <button class="cyber-btn cyber-btn-emerald" onclick="downloadBulkTxt()" style="font-size: 0.8rem; padding: 10px 18px;">
+                  <svg class="icon" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                  <span>Download .TXT</span>
+                </button>
+                <button class="cyber-btn cyber-btn-outline" onclick="downloadBulkJson()" style="font-size: 0.8rem; padding: 10px 18px;">
+                  <svg class="icon" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                  <span>Download .JSON</span>
+                </button>
+                <button class="cyber-btn cyber-btn-outline" onclick="resetBulkView()" style="font-size: 0.8rem; padding: 10px 18px; margin-left: auto;">
+                  <span>Generate Bulk Lain</span>
+                </button>
+              </div>
+
+              <!-- Result Table -->
+              <div style="overflow-x: auto; background: var(--bg-surface); border: 1px solid var(--border-subtle); border-radius: 12px; margin-bottom: 20px;">
+                <table style="width: 100%; border-collapse: collapse; font-family: var(--font-mono); font-size: 0.8rem; text-align: left;">
+                  <thead>
+                    <tr style="border-bottom: 1px solid var(--border-subtle); background: rgba(255,255,255,0.02); color: var(--text-dim);">
+                      <th style="padding: 12px 16px;">#</th>
+                      <th style="padding: 12px 16px;">Email Akun</th>
+                      <th style="padding: 12px 16px;">Status Lisensi</th>
+                      <th style="padding: 12px 16px;">Masa Berlaku</th>
+                      <th style="padding: 12px 16px;">Durasi</th>
+                      <th style="padding: 12px 16px; text-align: right;">Aksi</th>
+                    </tr>
+                  </thead>
+                  <tbody id="bulk-accounts-table-body">
+                    <!-- Populated by JS -->
+                  </tbody>
+                </table>
+              </div>
+
             </div>
 
           </div>
@@ -3755,6 +3944,177 @@
       document.getElementById('auto-form-container').classList.remove('hidden');
       document.getElementById('auto-terminal').classList.remove('active');
       document.getElementById('auto-result').classList.remove('active');
+    }
+
+    // ==================== BULK MODE LOGIC ====================
+    let currentBulkAccounts = [];
+
+    function selectBulkCount(n) {
+      document.getElementById('bulk-count-input').value = n;
+      document.querySelectorAll('#view-bulk .bulk-chip-btn').forEach(btn => {
+        if (btn.textContent.includes(n + ' Akun')) btn.classList.add('active');
+        else if (btn.textContent.includes('Akun')) btn.classList.remove('active');
+      });
+    }
+
+    function selectBulkConcurrency(c) {
+      document.getElementById('bulk-concurrency-input').value = c;
+      document.querySelectorAll('#view-bulk .bulk-chip-btn').forEach(btn => {
+        if (btn.textContent.includes(c + ' Threads')) btn.classList.add('active');
+        else if (btn.textContent.includes('Threads')) btn.classList.remove('active');
+      });
+    }
+
+    async function executeBulkActivation() {
+      const btn = document.getElementById('btn-run-bulk');
+      const terminal = document.getElementById('bulk-terminal');
+      const logs = document.getElementById('bulk-logs');
+      const statusMsg = document.getElementById('bulk-status-msg');
+      const progressBadge = document.getElementById('bulk-progress-badge');
+      const progressBar = document.getElementById('bulk-progress-bar');
+      
+      const count = parseInt(document.getElementById('bulk-count-input').value, 10) || 5;
+      const prefix = document.getElementById('bulk-prefix-input').value.trim() || 'am_';
+      const concurrency = parseInt(document.getElementById('bulk-concurrency-input').value, 10) || 3;
+
+      btn.classList.add('loading');
+      btn.disabled = true;
+
+      logs.innerHTML = '';
+      terminal.classList.add('active');
+      statusMsg.textContent = `DISPATCHING ${count} ACCOUNTS IN PARALLEL (${concurrency} THREADS)...`;
+      progressBadge.textContent = `0 / ${count} SELESAI (0%)`;
+      progressBar.style.width = '0%';
+
+      appendLog('bulk-logs', `Memulai multi-threaded generator pipeline (${count} akun, ${concurrency} paralel)...`);
+      appendLog('bulk-logs', `Prefix format target: ${prefix}[unique]@enchant.id`);
+
+      let currentProgress = 5;
+      const progressInterval = setInterval(() => {
+        if (currentProgress < 90) {
+          currentProgress += Math.random() * 8 + 3;
+          if (currentProgress > 90) currentProgress = 90;
+          progressBar.style.width = Math.floor(currentProgress) + '%';
+          progressBadge.textContent = `${Math.floor((currentProgress/100) * count)} / ${count} PROSES (${Math.floor(currentProgress)}%)`;
+        }
+      }, 1200);
+
+      try {
+        const res = await fetch('/api/activate/bulk', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            count,
+            prefix,
+            concurrency,
+            authUserEmail: currentUser ? currentUser.email : ''
+          })
+        });
+
+        clearInterval(progressInterval);
+        const data = await res.json();
+        if (!data.success) throw new Error(data.error || 'Eksekusi bulk generator gagal.');
+
+        progressBar.style.width = '100%';
+        progressBadge.textContent = `${data.totalSuccess} / ${data.totalRequested} SUKSES (100%)`;
+        appendLog('bulk-logs', `✅ Sukses generate ${data.totalSuccess} akun dalam ${data.durationSeconds} detik!`, true);
+        statusMsg.textContent = 'BULK PIPELINE COMPLETED';
+
+        currentBulkAccounts = data.accounts || [];
+
+        // Render Results
+        document.getElementById('bulk-form-container').classList.add('hidden');
+        terminal.classList.remove('active');
+
+        document.getElementById('bulk-res-success').textContent = `${data.totalSuccess} / ${data.totalRequested} Akun`;
+        document.getElementById('bulk-res-duration').textContent = `${data.durationSeconds}s`;
+        const avgPerAcc = data.totalSuccess > 0 ? (data.durationSeconds / data.totalSuccess).toFixed(1) : '0';
+        document.getElementById('bulk-res-avg').textContent = `${avgPerAcc}s / akun`;
+        document.getElementById('bulk-res-summary').textContent = data.message;
+
+        const tableBody = document.getElementById('bulk-accounts-table-body');
+        tableBody.innerHTML = currentBulkAccounts.map((acc, idx) => `
+          <tr style="border-bottom: 1px solid var(--border-subtle); transition: background 0.2s ease;">
+            <td style="padding: 12px 16px; color: var(--text-muted);">${idx + 1}</td>
+            <td style="padding: 12px 16px; font-weight: 700; color: var(--cyan);">${acc.email}</td>
+            <td style="padding: 12px 16px;">
+              <span class="cyber-badge ${acc.success ? 'emerald' : 'rose'}" style="font-size: 0.65rem;">
+                ${acc.success ? 'PREMIUM ACTIVE' : 'FAILED'}
+              </span>
+            </td>
+            <td style="padding: 12px 16px; color: #fff;">${acc.premiumExpiresAt || '1 Tahun'}</td>
+            <td style="padding: 12px 16px; color: var(--amber);">${acc.durationSeconds ? acc.durationSeconds + 's' : '—'}</td>
+            <td style="padding: 12px 16px; text-align: right;">
+              <button class="cyber-badge cyan" onclick="navigator.clipboard.writeText('${acc.email}'); alert('Email disalin: ${acc.email}')" style="cursor: pointer; padding: 4px 8px; margin-right: 4px;">
+                Salin
+              </button>
+              <button class="cyber-badge emerald" onclick="openMailboxDirectly('${acc.email}')" style="cursor: pointer; padding: 4px 8px;">
+                Buka Mail
+              </button>
+            </td>
+          </tr>
+        `).join('');
+
+        document.getElementById('bulk-result').classList.add('active');
+
+        // Refresh stats
+        fetchDashboardStats();
+
+      } catch (err) {
+        clearInterval(progressInterval);
+        appendLog('bulk-logs', `CRITICAL ERROR: ${err.message}`, false, true);
+        statusMsg.textContent = 'BULK EXECUTION FAILED';
+        progressBar.style.background = 'var(--rose)';
+      } finally {
+        btn.classList.remove('loading');
+        btn.disabled = false;
+      }
+    }
+
+    function copyAllBulkEmails() {
+      if (!currentBulkAccounts.length) return alert('Tidak ada akun untuk disalin.');
+      const textList = currentBulkAccounts.filter(a => a.success).map(a => a.email).join('\n');
+      navigator.clipboard.writeText(textList).then(() => {
+        alert(`Berhasil menyalin ${currentBulkAccounts.length} email ke clipboard!`);
+      });
+    }
+
+    function downloadBulkTxt() {
+      if (!currentBulkAccounts.length) return alert('Tidak ada akun untuk di-download.');
+      const lines = [
+        '=========================================',
+        '  ENCHANT AM PREMIUM - BULK ACCOUNTS',
+        `  Generated at: ${new Date().toLocaleString('id-ID')}`,
+        '=========================================\n',
+        ...currentBulkAccounts.map((a, i) => `${i + 1}. Email: ${a.email}\n   Status: ${a.status}\n   Expires: ${a.premiumExpiresAt || '1 Tahun'}\n`)
+      ].join('\n');
+
+      const blob = new Blob([lines], { type: 'text/plain;charset=utf-8' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = `am_premium_bulk_${Date.now()}.txt`;
+      a.click();
+    }
+
+    function downloadBulkJson() {
+      if (!currentBulkAccounts.length) return alert('Tidak ada akun untuk di-download.');
+      const dataStr = JSON.stringify({
+        generatedAt: new Date().toISOString(),
+        totalAccounts: currentBulkAccounts.length,
+        accounts: currentBulkAccounts
+      }, null, 2);
+
+      const blob = new Blob([dataStr], { type: 'application/json;charset=utf-8' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = `am_premium_bulk_${Date.now()}.json`;
+      a.click();
+    }
+
+    function resetBulkView() {
+      document.getElementById('bulk-form-container').classList.remove('hidden');
+      document.getElementById('bulk-terminal').classList.remove('active');
+      document.getElementById('bulk-result').classList.remove('active');
     }
 
     // ==================== MANUAL MODE LOGIC ====================

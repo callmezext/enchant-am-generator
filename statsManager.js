@@ -70,53 +70,48 @@ class StatsManager {
   getBannedInfo(ip) {
     if (!ip) return null;
     const cleanIp = ip.replace(/^::ffff:/, '').trim();
-    return this.data.bannedIPs ? this.data.bannedIPs[cleanIp] : null;
+    return (this.data.bannedIPs && this.data.bannedIPs[cleanIp]) || null;
   }
 
-  trackAndCheckIpSpam(ip, userEmail = 'guest', action = 'request') {
+  trackAndCheckIpSpam(ip, userEmail, action) {
     if (!ip) return { allowed: true };
     const cleanIp = ip.replace(/^::ffff:/, '').trim();
 
-    // Whitelist localhost/internal if admin
-    if (this.isAdmin(userEmail) && (cleanIp === '127.0.0.1' || cleanIp === '::1')) {
+    // Check if already banned
+    if (this.isIpBanned(cleanIp)) {
+      const bInfo = this.getBannedInfo(cleanIp);
+      return {
+        allowed: false,
+        reason: `IP Anda (${cleanIp}) terblokir: ${bInfo ? bInfo.reason : 'Spam Terdeteksi'}`
+      };
+    }
+
+    // Skip spam throttling for Admins
+    if (this.isAdmin(userEmail)) {
       return { allowed: true };
     }
 
-    if (this.isIpBanned(cleanIp)) {
-      const ban = this.getBannedInfo(cleanIp);
-      return {
-        allowed: false,
-        banned: true,
-        reason: ban ? ban.reason : 'IP Anda telah diblokir karena terdeteksi melakukan spam.'
-      };
-    }
-
     const now = Date.now();
-    if (!this.ipTracker.has(cleanIp)) {
-      this.ipTracker.set(cleanIp, []);
-    }
-    const timestamps = this.ipTracker.get(cleanIp);
-    // Keep requests within last 20 seconds
-    const windowStart = now - 20000;
-    const validTimestamps = timestamps.filter(t => t > windowStart);
-    validTimestamps.push(now);
-    this.ipTracker.set(cleanIp, validTimestamps);
+    const windowMs = 20000; // 20 seconds window
+    const maxRequests = 10; // Max 10 calls per 20 seconds
 
-    // Heuristics: More than 8 actions in 20 seconds -> AUTO BAN!
-    if (validTimestamps.length >= 8) {
-      this.autoBanIp(cleanIp, userEmail, action, validTimestamps.length);
+    let timestamps = this.ipTracker.get(cleanIp) || [];
+    timestamps = timestamps.filter((ts) => now - ts < windowMs);
+    timestamps.push(now);
+    this.ipTracker.set(cleanIp, timestamps);
+
+    if (timestamps.length > maxRequests) {
+      this.banIpAuto(cleanIp, userEmail, action, timestamps.length);
       return {
         allowed: false,
-        banned: true,
-        reason: `IP ${cleanIp} diblokir otomatis oleh sistem karena aktivitas spam berlebih (${validTimestamps.length} request / 20 detik).`
+        reason: `Akses ditolak: IP ${cleanIp} otomatis diblokir karena melakukan spam (${timestamps.length} request dalam 20 detik).`
       };
     }
 
-    return { allowed: true, requestCount: validTimestamps.length };
+    return { allowed: true };
   }
 
-  autoBanIp(ip, userEmail, action, count) {
-    const cleanIp = ip.replace(/^::ffff:/, '').trim();
+  banIpAuto(cleanIp, userEmail, action, count) {
     if (!this.data.bannedIPs) this.data.bannedIPs = {};
 
     const reason = `Spam Terdeteksi: ${count}x ${action} dalam 20 detik`;
@@ -221,19 +216,19 @@ class StatsManager {
   getStats(userEmail = '') {
     const todayKey = this.getTodayDateKey();
     const todayUsageMap = this.data.dailyUsage[todayKey] || {};
-    
-    // Count activations today across all users from real database records
-    let todayCount = 0;
-    Object.values(todayUsageMap).forEach(cnt => { todayCount += (Number(cnt) || 0); });
 
-    // Calculate Average Duration from recent successful activations
-    const durations = (this.data.recentDurations && this.data.recentDurations.length) ? this.data.recentDurations : [19.5];
+    let todayCount = 0;
+    Object.values(todayUsageMap).forEach((cnt) => {
+      todayCount += Number(cnt) || 0;
+    });
+
+    const durations =
+      this.data.recentDurations && this.data.recentDurations.length ? this.data.recentDurations : [19.5];
     const avgDuration = durations.reduce((a, b) => a + b, 0) / durations.length;
 
-    // Total Mailboxes from real emailStore registry
-    const totalMailboxes = (emailStore && emailStore.mailboxes) ? emailStore.mailboxes.size : 0;
+    const totalMailboxes = emailStore && emailStore.mailboxes ? emailStore.mailboxes.size : 0;
 
-    const userCount = userEmail ? (todayUsageMap[userEmail.toLowerCase().trim()] || 0) : 0;
+    const userCount = userEmail ? todayUsageMap[userEmail.toLowerCase().trim()] || 0 : 0;
     const isAdm = this.isAdmin(userEmail);
     const limit = this.data.dailyLimitPerUser || 5;
 
@@ -255,7 +250,7 @@ class StatsManager {
     };
   }
 
-  canUserGenerate(userEmail) {
+  canUserGenerate(userEmail, requestedCount = 1) {
     if (!userEmail) return { allowed: true, remaining: 5, limit: 5 };
     const email = userEmail.toLowerCase().trim();
     if (this.isAdmin(email)) {
@@ -264,15 +259,16 @@ class StatsManager {
 
     const todayKey = this.getTodayDateKey();
     if (!this.data.dailyUsage[todayKey]) this.data.dailyUsage[todayKey] = {};
-    
+
     const count = this.data.dailyUsage[todayKey][email] || 0;
     const limit = this.data.dailyLimitPerUser || 5;
 
-    if (count >= limit) {
+    if (count + requestedCount > limit) {
+      const sisa = Math.max(0, limit - count);
       return {
         allowed: false,
-        error: `Batas harian kamu (${limit}x generate/hari) telah tercapai. Coba lagi besok atau hubungi Admin.`,
-        remaining: 0,
+        error: `Batas harian kamu tidak mencukupi untuk ${requestedCount} akun (Sisa kuota: ${sisa}x dari limit ${limit}x/hari). Coba lagi besok atau hubungi Admin.`,
+        remaining: sisa,
         limit
       };
     }
@@ -287,7 +283,7 @@ class StatsManager {
   recordActivation({ userEmail, targetEmail, mode, durationSeconds }) {
     const todayKey = this.getTodayDateKey();
     if (!this.data.dailyUsage[todayKey]) this.data.dailyUsage[todayKey] = {};
-    
+
     if (userEmail) {
       const uEmail = userEmail.toLowerCase().trim();
       this.data.dailyUsage[todayKey][uEmail] = (this.data.dailyUsage[todayKey][uEmail] || 0) + 1;
@@ -310,6 +306,44 @@ class StatsManager {
       durationSeconds: durationSeconds ? parseFloat(durationSeconds.toFixed(1)) : 18.0
     });
     if (this.data.history.length > 50) this.data.history.pop();
+
+    this.save();
+  }
+
+  recordBulkActivation({ userEmail, count, accounts, durationSeconds }) {
+    const todayKey = this.getTodayDateKey();
+    if (!this.data.dailyUsage[todayKey]) this.data.dailyUsage[todayKey] = {};
+
+    const successCount = accounts.filter((a) => a.success).length;
+
+    if (userEmail && successCount > 0) {
+      const uEmail = userEmail.toLowerCase().trim();
+      this.data.dailyUsage[todayKey][uEmail] = (this.data.dailyUsage[todayKey][uEmail] || 0) + successCount;
+    }
+
+    this.data.totalActivations = (this.data.totalActivations || 12848) + successCount;
+
+    if (durationSeconds && durationSeconds > 0) {
+      if (!this.data.recentDurations) this.data.recentDurations = [];
+      this.data.recentDurations.push(parseFloat((durationSeconds / Math.max(1, successCount)).toFixed(1)));
+      if (this.data.recentDurations.length > 20) this.data.recentDurations.shift();
+    }
+
+    if (!this.data.history) this.data.history = [];
+    accounts.forEach((acc) => {
+      if (acc.success) {
+        this.data.history.unshift({
+          timestamp: new Date().toISOString(),
+          userEmail: userEmail || 'guest',
+          targetEmail: acc.email,
+          mode: 'bulk',
+          durationSeconds: acc.durationSeconds || 12.0
+        });
+      }
+    });
+    if (this.data.history.length > 50) {
+      this.data.history = this.data.history.slice(0, 50);
+    }
 
     this.save();
   }

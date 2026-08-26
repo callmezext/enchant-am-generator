@@ -343,6 +343,99 @@ app.post('/api/activate', async (req, res) => {
   }
 });
 
+// ===== MODE 1B: BULK GENERATOR (Parallel Concurrency) =====
+app.post('/api/activate/bulk', async (req, res) => {
+  const clientIp = getClientIp(req);
+  const authUserEmail = (req.body.authUserEmail || '').trim().toLowerCase();
+
+  // Mandatory @gmail.com validation
+  if (authUserEmail && !authUserEmail.endsWith('@gmail.com')) {
+    return res.status(403).json({ success: false, error: 'Hanya akun @gmail.com yang diizinkan untuk menggunakan layanan ini.' });
+  }
+
+  const requestedCount = Math.min(Math.max(parseInt(req.body.count || '5', 10), 1), 25);
+  const prefix = (req.body.prefix || 'am').trim();
+  const concurrency = Math.min(Math.max(parseInt(req.body.concurrency || '3', 10), 1), 5);
+
+  // IP Spam Protection Check
+  const spamCheck = statsManager.trackAndCheckIpSpam(clientIp, authUserEmail, `Aktivasi Bulk (${requestedCount}x)`);
+  if (!spamCheck.allowed) {
+    return res.status(403).json({ success: false, banned: true, error: spamCheck.reason });
+  }
+
+  // Enforce daily limit check
+  const check = statsManager.canUserGenerate(authUserEmail, requestedCount);
+  if (!check.allowed) {
+    return res.status(429).json({ success: false, error: check.error });
+  }
+
+  const startTime = Date.now();
+  try {
+    console.log(`[AM] 🚀 Mode Bulk [IP: ${clientIp} | User: ${authUserEmail || 'guest'}]: Generating ${requestedCount} accounts (prefix: ${prefix}, concurrency: ${concurrency})...`);
+    
+    const result = await arkanaEngine.activateBulk({
+      count: requestedCount,
+      prefix,
+      concurrency
+    });
+
+    const totalDuration = parseFloat(((Date.now() - startTime) / 1000).toFixed(1));
+
+    if (result && result.results) {
+      const formattedAccounts = result.results.map(acc => {
+        const exp = formatExpiryDate(acc.expiresAt);
+        return {
+          ...acc,
+          premiumExpiresAt: exp
+        };
+      });
+
+      // Record activations
+      statsManager.recordBulkActivation({
+        userEmail: authUserEmail,
+        count: requestedCount,
+        accounts: formattedAccounts,
+        durationSeconds: totalDuration
+      });
+
+      // Auto-register mailboxes to WhatsApp
+      if (authUserEmail) {
+        formattedAccounts.forEach(acc => {
+          if (acc.success && acc.email) {
+            waBotService.registerUserMailbox(authUserEmail, acc.email);
+          }
+        });
+      }
+
+      // Send admin WhatsApp notification
+      const successCount = formattedAccounts.filter(a => a.success).length;
+      waBotService.sendAdminNotification({
+        userEmail: authUserEmail,
+        targetEmail: `[BULK] ${successCount}/${requestedCount} Akun (${prefix})`,
+        mode: 'bulk',
+        expiresAt: '1 Tahun',
+        durationSeconds: totalDuration,
+        ip: clientIp
+      }).catch(e => console.error('[Admin Notif Error]:', e.message));
+
+      res.json({
+        success: true,
+        totalRequested: requestedCount,
+        totalSuccess: successCount,
+        totalFailed: requestedCount - successCount,
+        durationSeconds: totalDuration,
+        accounts: formattedAccounts,
+        message: `Berhasil men-generate ${successCount} dari ${requestedCount} akun dalam ${totalDuration} detik!`
+      });
+    } else {
+      throw new Error(result.error || 'Gagal eksekusi bulk generator.');
+    }
+  } catch (err) {
+    console.error('[AM Bulk Error]:', err.message);
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
 // ===== MODE 2: MANUAL - Step 1: Kirim link verifikasi =====
 app.post('/api/manual/send', async (req, res) => {
   const clientIp = getClientIp(req);
