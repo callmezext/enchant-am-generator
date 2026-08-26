@@ -1297,6 +1297,8 @@
       gap: 12px;
       justify-content: center;
       flex-wrap: wrap;
+    }
+
     .bulk-chip-btn {
       background: var(--bg-surface);
       border: 1px solid var(--border-subtle);
@@ -1319,6 +1321,17 @@
       border-color: var(--cyan);
       color: var(--cyan);
       box-shadow: 0 0 10px var(--cyan-glow);
+    }
+
+    @keyframes toastSlideIn {
+      from {
+        opacity: 0;
+        transform: translateY(20px) scale(0.95);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+      }
     }
 
     /* ================= INTEGRATED ENCHANT MAIL STYLES ================= */
@@ -2064,7 +2077,7 @@
         <button class="nav-btn" onclick="switchView('bulk')" id="nav-bulk">
           <!-- Multi-Zap / Fast Bulk Icon -->
           <svg class="icon" style="color: var(--cyan);" viewBox="0 0 24 24"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
-          <span>⚡ Bulk Generator</span>
+          <span>Bulk Generator</span>
           <span class="cyber-badge cyan" style="margin-left: auto; font-size: 0.6rem;">FAST</span>
         </button>
 
@@ -2206,7 +2219,7 @@
             <div class="tech-notice">
               <svg class="icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
               <div class="notice-text">
-                Pilih <b>Aktivasi Otomatis</b> untuk 1 akun instant, <b>⚡ Bulk Generator</b> untuk multi-akun cepat (paralel), atau <b>Aktivasi Manual</b> jika ingin menautkan lisensi ke email pribadi.
+                Pilih <b>Aktivasi Otomatis</b> untuk 1 akun instant, <b>Bulk Generator</b> untuk multi-akun cepat (paralel), atau <b>Aktivasi Manual</b> jika ingin menautkan lisensi ke email pribadi.
               </div>
             </div>
 
@@ -2217,7 +2230,7 @@
               </button>
               <button class="cyber-btn cyber-btn-emerald" onclick="switchView('bulk')" style="background: linear-gradient(135deg, rgba(0, 242, 254, 0.2), rgba(0, 255, 136, 0.25)); border-color: var(--cyan);">
                 <svg class="icon" style="color: var(--cyan);" viewBox="0 0 24 24"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
-                <span>⚡ Bulk Generator (Multi-Akun)</span>
+                <span>Bulk Generator (Multi-Akun)</span>
               </button>
               <button class="cyber-btn cyber-btn-outline" onclick="switchView('manual')">
                 <svg class="icon" viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
@@ -2362,7 +2375,7 @@
               <div class="card-header-flex">
                 <div class="section-title">
                   <svg class="icon" style="color: var(--cyan);" viewBox="0 0 24 24"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
-                  <span>⚡ Bulk Generator (Multi-Akun Paralel)</span>
+                  <span>Bulk Generator (Multi-Akun Paralel)</span>
                 </div>
                 <div class="cyber-badge cyan">PARALLEL ENGINE</div>
               </div>
@@ -2378,11 +2391,11 @@
               <div class="form-group" style="margin-top: 20px;">
                 <label class="form-label">Jumlah Akun yang Ingin Dibuat</label>
                 <div style="display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 10px;">
-                  <button type="button" class="bulk-chip-btn" onclick="selectBulkCount(3)">3 Akun</button>
-                  <button type="button" class="bulk-chip-btn active" onclick="selectBulkCount(5)">5 Akun</button>
-                  <button type="button" class="bulk-chip-btn" onclick="selectBulkCount(10)">10 Akun</button>
-                  <button type="button" class="bulk-chip-btn" onclick="selectBulkCount(15)">15 Akun</button>
-                  <button type="button" class="bulk-chip-btn" onclick="selectBulkCount(20)">20 Akun</button>
+                  <button type="button" class="bulk-chip-btn" data-count="3" onclick="selectBulkCount(3)">3 Akun</button>
+                  <button type="button" class="bulk-chip-btn active" data-count="5" onclick="selectBulkCount(5)">5 Akun</button>
+                  <button type="button" class="bulk-chip-btn" data-count="10" onclick="selectBulkCount(10)">10 Akun</button>
+                  <button type="button" class="bulk-chip-btn" data-count="15" onclick="selectBulkCount(15)">15 Akun</button>
+                  <button type="button" class="bulk-chip-btn" data-count="20" onclick="selectBulkCount(20)">20 Akun</button>
                 </div>
                 <input type="number" class="cyber-input" id="bulk-count-input" value="5" min="1" max="25" style="max-width: 220px;" placeholder="Jumlah akun (1-25)">
               </div>
@@ -2405,10 +2418,10 @@
               <div class="form-group" style="margin-top: 16px;">
                 <label class="form-label">Kecepatan Paralel (Concurrency Threads)</label>
                 <div style="display: flex; gap: 8px; flex-wrap: wrap;">
-                  <button type="button" class="bulk-chip-btn" onclick="selectBulkConcurrency(2)">2 Threads (Ringan)</button>
-                  <button type="button" class="bulk-chip-btn active" onclick="selectBulkConcurrency(3)">3 Threads (Optimal)</button>
-                  <button type="button" class="bulk-chip-btn" onclick="selectBulkConcurrency(4)">4 Threads (Ultra Cepat)</button>
-                  <button type="button" class="bulk-chip-btn" onclick="selectBulkConcurrency(5)">5 Threads (Maksimal)</button>
+                  <button type="button" class="bulk-chip-btn" data-threads="2" onclick="selectBulkConcurrency(2)">2 Threads (Ringan)</button>
+                  <button type="button" class="bulk-chip-btn active" data-threads="3" onclick="selectBulkConcurrency(3)">3 Threads (Optimal)</button>
+                  <button type="button" class="bulk-chip-btn" data-threads="4" onclick="selectBulkConcurrency(4)">4 Threads (Ultra Cepat)</button>
+                  <button type="button" class="bulk-chip-btn" data-threads="5" onclick="selectBulkConcurrency(5)">5 Threads (Maksimal)</button>
                 </div>
                 <input type="hidden" id="bulk-concurrency-input" value="3">
               </div>
@@ -2872,8 +2885,9 @@
                   <div class="btn-spinner" style="display: inline-block; width: 32px; height: 32px; border-color: rgba(0, 255, 136, 0.3); border-top-color: var(--emerald);"></div>
                   <div style="font-family: var(--font-mono); font-size: 0.75rem; color: var(--text-dim); margin-top: 12px;">Memuat QR Code WhatsApp...</div>
                 </div>
-                <div id="admin-wa-bot-info" style="display: none; margin-top: 12px; font-family: var(--font-mono); font-size: 0.8rem; color: var(--emerald);">
-                  🟢 Bot Terhubung: <b id="admin-wa-bot-number">+62...</b>
+                <div id="admin-wa-bot-info" style="display: none; margin-top: 12px; font-family: var(--font-mono); font-size: 0.8rem; color: var(--emerald); display: flex; align-items: center; justify-content: center; gap: 6px;">
+                  <div class="status-dot"></div>
+                  <span>Bot Terhubung: <b id="admin-wa-bot-number">+62...</b></span>
                 </div>
               </div>
 
@@ -3558,13 +3572,13 @@
 
         if (statusText) {
           if (data.status === 'CONNECTED') {
-            statusText.textContent = '🟢 TERHUBUNG (SIAP KIRIM EMAIL)';
+            statusText.textContent = 'TERHUBUNG // BOT AKTIF';
             statusText.style.color = 'var(--emerald)';
           } else if (data.status === 'WAITING_QR') {
-            statusText.textContent = '📱 MENUNGGU SCAN QR WHATSAPP';
+            statusText.textContent = 'MENUNGGU SCAN QR CODE';
             statusText.style.color = 'var(--cyan)';
           } else {
-            statusText.textContent = `⚠️ ${data.status}`;
+            statusText.textContent = `OFFLINE // ${data.status}`;
             statusText.style.color = 'var(--rose)';
           }
         }
@@ -3923,6 +3937,7 @@
         document.getElementById('auto-res-msg').textContent = data.message || 'Lisensi Pro 1 Tahun disiapkan.';
 
         document.getElementById('auto-result').classList.add('active');
+        showToast(`Akun ${data.email} berhasil diaktifkan!`, 'success');
 
         // Check if user's account already has WhatsApp connected
         syncUserWAStatus(data.email);
@@ -3933,6 +3948,7 @@
       } catch (err) {
         appendLog('auto-logs', `CRITICAL ERROR: ${err.message}`, false, true);
         statusMsg.textContent = 'EXECUTION FAILED';
+        showToast(err.message, 'error');
       } finally {
         btn.classList.remove('loading');
         btn.disabled = false;
@@ -3946,22 +3962,63 @@
       document.getElementById('auto-result').classList.remove('active');
     }
 
+    // ==================== TOAST NOTIFICATION SYSTEM ====================
+    function showToast(message, type = 'info') {
+      let toastContainer = document.getElementById('cyber-toast-container');
+      if (!toastContainer) {
+        toastContainer = document.createElement('div');
+        toastContainer.id = 'cyber-toast-container';
+        toastContainer.style.cssText = 'position:fixed;bottom:24px;right:24px;z-index:99999;display:flex;flex-direction:column;gap:10px;pointer-events:none;';
+        document.body.appendChild(toastContainer);
+      }
+      const toast = document.createElement('div');
+      toast.className = `cyber-toast ${type}`;
+      toast.style.cssText = 'pointer-events:auto;min-width:260px;max-width:380px;background:var(--bg-panel);border:1px solid var(--border-cyan);border-radius:12px;padding:12px 18px;backdrop-filter:blur(16px);box-shadow:0 8px 30px rgba(0,0,0,0.6);font-family:var(--font-tech);font-size:0.9rem;font-weight:600;display:flex;align-items:center;gap:10px;animation:toastSlideIn 0.3s cubic-bezier(0.4,0,0.2,1);';
+      
+      let iconSvg = '<svg class="icon" style="color:var(--cyan);width:18px;height:18px;" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>';
+      if (type === 'success') {
+        toast.style.borderColor = 'var(--emerald)';
+        iconSvg = '<svg class="icon" style="color:var(--emerald);width:18px;height:18px;" viewBox="0 0 24 24"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>';
+      } else if (type === 'error') {
+        toast.style.borderColor = 'var(--rose)';
+        iconSvg = '<svg class="icon" style="color:var(--rose);width:18px;height:18px;" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>';
+      }
+      
+      toast.innerHTML = `${iconSvg}<span style="color:#fff;">${escapeHtml(message)}</span>`;
+      toastContainer.appendChild(toast);
+      setTimeout(() => {
+        toast.style.opacity = '0';
+        toast.style.transform = 'translateY(10px)';
+        toast.style.transition = 'all 0.3s ease';
+        setTimeout(() => toast.remove(), 300);
+      }, 3000);
+    }
+
+    function copySingleEmail(email) {
+      if (!email) return;
+      navigator.clipboard.writeText(email).then(() => {
+        showToast(`Email ${email} berhasil disalin!`, 'success');
+      }).catch(() => {
+        showToast('Gagal menyalin ke clipboard', 'error');
+      });
+    }
+
     // ==================== BULK MODE LOGIC ====================
     let currentBulkAccounts = [];
 
     function selectBulkCount(n) {
       document.getElementById('bulk-count-input').value = n;
-      document.querySelectorAll('#view-bulk .bulk-chip-btn').forEach(btn => {
-        if (btn.textContent.includes(n + ' Akun')) btn.classList.add('active');
-        else if (btn.textContent.includes('Akun')) btn.classList.remove('active');
+      document.querySelectorAll('#view-bulk .bulk-chip-btn[data-count]').forEach(btn => {
+        if (btn.getAttribute('data-count') == n) btn.classList.add('active');
+        else btn.classList.remove('active');
       });
     }
 
     function selectBulkConcurrency(c) {
       document.getElementById('bulk-concurrency-input').value = c;
-      document.querySelectorAll('#view-bulk .bulk-chip-btn').forEach(btn => {
-        if (btn.textContent.includes(c + ' Threads')) btn.classList.add('active');
-        else if (btn.textContent.includes('Threads')) btn.classList.remove('active');
+      document.querySelectorAll('#view-bulk .bulk-chip-btn[data-threads]').forEach(btn => {
+        if (btn.getAttribute('data-threads') == c) btn.classList.add('active');
+        else btn.classList.remove('active');
       });
     }
 
@@ -4017,7 +4074,7 @@
 
         progressBar.style.width = '100%';
         progressBadge.textContent = `${data.totalSuccess} / ${data.totalRequested} SUKSES (100%)`;
-        appendLog('bulk-logs', `✅ Sukses generate ${data.totalSuccess} akun dalam ${data.durationSeconds} detik!`, true);
+        appendLog('bulk-logs', `Sukses generate ${data.totalSuccess} akun dalam ${data.durationSeconds} detik!`, true);
         statusMsg.textContent = 'BULK PIPELINE COMPLETED';
 
         currentBulkAccounts = data.accounts || [];
@@ -4036,19 +4093,21 @@
         tableBody.innerHTML = currentBulkAccounts.map((acc, idx) => `
           <tr style="border-bottom: 1px solid var(--border-subtle); transition: background 0.2s ease;">
             <td style="padding: 12px 16px; color: var(--text-muted);">${idx + 1}</td>
-            <td style="padding: 12px 16px; font-weight: 700; color: var(--cyan);">${acc.email}</td>
+            <td style="padding: 12px 16px; font-weight: 700; color: var(--cyan);">${escapeHtml(acc.email)}</td>
             <td style="padding: 12px 16px;">
               <span class="cyber-badge ${acc.success ? 'emerald' : 'rose'}" style="font-size: 0.65rem;">
                 ${acc.success ? 'PREMIUM ACTIVE' : 'FAILED'}
               </span>
             </td>
-            <td style="padding: 12px 16px; color: #fff;">${acc.premiumExpiresAt || '1 Tahun'}</td>
+            <td style="padding: 12px 16px; color: #fff;">${escapeHtml(acc.premiumExpiresAt || '1 Tahun')}</td>
             <td style="padding: 12px 16px; color: var(--amber);">${acc.durationSeconds ? acc.durationSeconds + 's' : '—'}</td>
             <td style="padding: 12px 16px; text-align: right;">
-              <button class="cyber-badge cyan" onclick="navigator.clipboard.writeText('${acc.email}'); alert('Email disalin: ${acc.email}')" style="cursor: pointer; padding: 4px 8px; margin-right: 4px;">
+              <button class="cyber-badge cyan" onclick="copySingleEmail('${escapeHtml(acc.email)}')" style="cursor: pointer; padding: 5px 10px; margin-right: 4px;">
+                <svg class="icon" style="width: 10px; height: 10px; margin-right: 2px;" viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
                 Salin
               </button>
-              <button class="cyber-badge emerald" onclick="openMailboxDirectly('${acc.email}')" style="cursor: pointer; padding: 4px 8px;">
+              <button class="cyber-badge emerald" onclick="openMailboxDirectly('${escapeHtml(acc.email)}')" style="cursor: pointer; padding: 5px 10px;">
+                <svg class="icon" style="width: 10px; height: 10px; margin-right: 2px;" viewBox="0 0 24 24"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
                 Buka Mail
               </button>
             </td>
@@ -4056,6 +4115,7 @@
         `).join('');
 
         document.getElementById('bulk-result').classList.add('active');
+        showToast(`Berhasil men-generate ${data.totalSuccess} akun!`, 'success');
 
         // Refresh stats
         fetchDashboardStats();
@@ -4065,6 +4125,7 @@
         appendLog('bulk-logs', `CRITICAL ERROR: ${err.message}`, false, true);
         statusMsg.textContent = 'BULK EXECUTION FAILED';
         progressBar.style.background = 'var(--rose)';
+        showToast(err.message, 'error');
       } finally {
         btn.classList.remove('loading');
         btn.disabled = false;
@@ -4072,15 +4133,17 @@
     }
 
     function copyAllBulkEmails() {
-      if (!currentBulkAccounts.length) return alert('Tidak ada akun untuk disalin.');
+      if (!currentBulkAccounts.length) return showToast('Tidak ada akun untuk disalin.', 'error');
       const textList = currentBulkAccounts.filter(a => a.success).map(a => a.email).join('\n');
       navigator.clipboard.writeText(textList).then(() => {
-        alert(`Berhasil menyalin ${currentBulkAccounts.length} email ke clipboard!`);
+        showToast(`Berhasil menyalin ${currentBulkAccounts.length} email ke clipboard!`, 'success');
+      }).catch(() => {
+        showToast('Gagal menyalin ke clipboard', 'error');
       });
     }
 
     function downloadBulkTxt() {
-      if (!currentBulkAccounts.length) return alert('Tidak ada akun untuk di-download.');
+      if (!currentBulkAccounts.length) return showToast('Tidak ada akun untuk di-download.', 'error');
       const lines = [
         '=========================================',
         '  ENCHANT AM PREMIUM - BULK ACCOUNTS',
@@ -4094,10 +4157,11 @@
       a.href = URL.createObjectURL(blob);
       a.download = `am_premium_bulk_${Date.now()}.txt`;
       a.click();
+      showToast('File TXT berhasil diunduh!', 'success');
     }
 
     function downloadBulkJson() {
-      if (!currentBulkAccounts.length) return alert('Tidak ada akun untuk di-download.');
+      if (!currentBulkAccounts.length) return showToast('Tidak ada akun untuk di-download.', 'error');
       const dataStr = JSON.stringify({
         generatedAt: new Date().toISOString(),
         totalAccounts: currentBulkAccounts.length,
@@ -4109,6 +4173,7 @@
       a.href = URL.createObjectURL(blob);
       a.download = `am_premium_bulk_${Date.now()}.json`;
       a.click();
+      showToast('File JSON berhasil diunduh!', 'success');
     }
 
     function resetBulkView() {
@@ -4121,7 +4186,7 @@
     async function executeManualSend() {
       const emailInput = document.getElementById('manual-email-input');
       const email = emailInput.value.trim().toLowerCase();
-      if (!email) return alert('Masukkan email target terlebih dahulu!');
+      if (!email) return showToast('Masukkan email target terlebih dahulu!', 'error');
 
       const btn = document.getElementById('btn-manual-send');
       const terminal = document.getElementById('manual-terminal');
@@ -4157,10 +4222,12 @@
         document.getElementById('manual-target-display').textContent = email;
         document.getElementById('manual-step1').classList.add('hidden');
         document.getElementById('manual-step2').classList.remove('hidden');
+        showToast('Link verifikasi berhasil dikirim!', 'success');
 
       } catch (err) {
         appendLog('manual-logs', `ERROR: ${err.message}`, false, true);
         statusMsg.textContent = 'SENDING FAILED';
+        showToast(err.message, 'error');
       } finally {
         btn.classList.remove('loading');
         btn.disabled = false;
@@ -4176,7 +4243,7 @@
     async function executeManualVerify() {
       const linkInput = document.getElementById('manual-link-input');
       const magicLink = linkInput.value.trim();
-      if (!magicLink) return alert('Tempel tautan sign-in Alight Creative dari email kamu!');
+      if (!magicLink) return showToast('Tempel tautan sign-in Alight Creative dari email kamu!', 'error');
 
       const btn = document.getElementById('btn-manual-verify');
       const terminal = document.getElementById('manual-terminal');
@@ -4216,6 +4283,7 @@
         document.getElementById('manual-res-msg').textContent = data.message || 'Lisensi Pro 1 Tahun berhasil disematkan.';
 
         document.getElementById('manual-result').classList.add('active');
+        showToast('Lisensi berhasil diaktifkan!', 'success');
 
         // Refresh stats
         fetchDashboardStats();
@@ -4342,7 +4410,9 @@
     function copyIntegratedEmail() {
       if (!integratedActiveMailbox) return;
       navigator.clipboard.writeText(integratedActiveMailbox.email).then(() => {
-        alert('Email disalin: ' + integratedActiveMailbox.email);
+        showToast('Email ' + integratedActiveMailbox.email + ' disalin!', 'success');
+      }).catch(() => {
+        showToast('Gagal menyalin email.', 'error');
       });
     }
 
@@ -4444,7 +4514,11 @@
 
     function copyIntegratedLoginLink() {
       if (!currentActiveLoginLink) return;
-      navigator.clipboard.writeText(currentActiveLoginLink).then(() => alert('Link login berhasil disalin: ' + currentActiveLoginLink));
+      navigator.clipboard.writeText(currentActiveLoginLink).then(() => {
+        showToast('Link login berhasil disalin!', 'success');
+      }).catch(() => {
+        showToast('Gagal menyalin link login.', 'error');
+      });
     }
 
     async function deleteIntegratedMsg() {
@@ -4456,8 +4530,9 @@
         integratedMessages = integratedMessages.filter(m => m.id !== integratedCurrentMsgId);
         renderIntegratedInbox();
         closeIntegratedModalDirect();
+        showToast('Pesan berhasil dihapus.', 'success');
       } catch (e) {
-        alert('Gagal menghapus pesan.');
+        showToast('Gagal menghapus pesan.', 'error');
       }
     }
 
@@ -4469,14 +4544,19 @@
         await fetch(`/api/v1/mail/inbox?email=${encodeURIComponent(integratedActiveMailbox.username)}`, { method: 'DELETE' });
         integratedMessages = [];
         renderIntegratedInbox();
+        showToast('Kotak masuk berhasil dibersihkan.', 'success');
       } catch (e) {
-        alert('Gagal membersihkan kotak masuk.');
+        showToast('Gagal membersihkan kotak masuk.', 'error');
       }
     }
 
     function copyIntegratedOtp() {
       const code = document.getElementById('integratedModalOtpCode').textContent;
-      navigator.clipboard.writeText(code).then(() => alert('OTP disalin: ' + code));
+      navigator.clipboard.writeText(code).then(() => {
+        showToast('Kode OTP ' + code + ' disalin!', 'success');
+      }).catch(() => {
+        showToast('Gagal menyalin OTP.', 'error');
+      });
     }
 
     function setupIntegratedSSE(username) {
