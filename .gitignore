@@ -7,3 +7,11 @@ node_modules/
 *.tar.gz
 *.tmp
 .DS_Store
+
+mailboxes.json
+messages.json
+stats.json
+wa_pairings.json
+accounts.json
+*.bak_*
+core

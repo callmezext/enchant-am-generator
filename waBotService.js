@@ -1,38 +1,92 @@
 /**
  * WhatsApp Bot Service for Enchant AM Premium & Temp Mail Hub
- * Powered by whatsapp-web.js (Official WhatsApp Web Engine)
- * Features:
- * - QR Scan for Owner in Admin Dashboard
- * - Link user WhatsApp account via unique code / redirect link
- * - Auto-forward incoming emails, OTP, and Alight Creative Magic Links directly to WhatsApp
+ * Powered by zapo-js (Lightweight WebSocket Engine - Zero Chrome/Puppeteer)
  */
 
-const { Client, LocalAuth } = require('whatsapp-web.js');
+if (typeof global.WebSocket === 'undefined') {
+  global.WebSocket = require('ws');
+}
+
+const { createSqliteStore } = require('@innovatorssoft/store-sqlite');
+const { createStore, WaClient, ConsoleLogger } = require('zapo-js');
 const qrcode = require('qrcode');
 const fs = require('fs');
 const path = require('path');
 
 const PAIRINGS_FILE = path.join(__dirname, 'wa_pairings.json');
+const SESSION_DIR = path.join(__dirname, '.wabot_zapo');
+const SQLITE_PATH = path.join(SESSION_DIR, 'session.sqlite');
+const SESSION_ID = 'amprem-wa-bot';
+
+function extractTextFromMessage(message) {
+  if (!message) return '';
+  if (message.ephemeralMessage?.message) return extractTextFromMessage(message.ephemeralMessage.message);
+  if (message.viewOnceMessage?.message) return extractTextFromMessage(message.viewOnceMessage.message);
+  if (message.viewOnceMessageV2?.message) return extractTextFromMessage(message.viewOnceMessageV2.message);
+  if (message.documentWithCaptionMessage?.message) return extractTextFromMessage(message.documentWithCaptionMessage.message);
+  if (message.editedMessage?.message) return extractTextFromMessage(message.editedMessage.message);
+  return (
+    message.conversation ||
+    message.extendedTextMessage?.text ||
+    message.imageMessage?.caption ||
+    message.videoMessage?.caption ||
+    message.documentMessage?.caption ||
+    message.interactiveResponseMessage?.body?.text ||
+    message.buttonsResponseMessage?.selectedButtonId ||
+    message.templateButtonReplyMessage?.selectedId ||
+    message.listResponseMessage?.singleSelectReply?.selectedRowId ||
+    ''
+  );
+}
+
+function toZapoJid(raw) {
+  if (!raw) return '';
+  const s = String(raw).trim();
+  if (s.endsWith('@lid') || s.endsWith('@s.whatsapp.net')) return s;
+  if (s.endsWith('@c.us')) return s.replace(/@c\.us$/i, '@s.whatsapp.net');
+  let digits = s.replace(/[^0-9]/g, '');
+  if (digits.startsWith('0')) digits = '62' + digits.slice(1);
+  return digits ? (digits + '@s.whatsapp.net') : '';
+}
+
+function hasSavedSqliteAuth(sqlitePath) {
+  try {
+    if (!fs.existsSync(sqlitePath)) return false;
+    const { DatabaseSync } = require('node:sqlite');
+    const db = new DatabaseSync(sqlitePath, { readOnly: true });
+    try {
+      const row = db.prepare("SELECT me_jid FROM auth_credentials WHERE me_jid IS NOT NULL AND me_jid != '' LIMIT 1").get();
+      return !!(row && row.me_jid);
+    } finally {
+      db.close();
+    }
+  } catch (_) {
+    return false;
+  }
+}
 
 class WABotService {
   constructor() {
     this.client = null;
-    this.status = 'DISCONNECTED'; // DISCONNECTED | INITIALIZING | WAITING_QR | CONNECTED | ERROR
+    this.store = null;
+    this.status = 'DISCONNECTED';
     this.qrDataUrl = null;
+    this.pairingCode = null;
     this.botNumber = null;
     this.botName = null;
     this.errorMessage = null;
+    this._isStarting = false;
+    this._manualStop = false;
+    this._reconnectTimer = null;
+    this._pairingReadyWaiters = [];
 
-    // Pairing Store: { [userEmail]: { userEmail, mailbox, phone, chatId, pairedAt } }
-    // User Mailboxes: { [userEmail]: ['mamah', 'nino', ...] }
-    // Mailbox Owner: { [mailboxKey]: userEmail }
     this.data = {
-      pairings: {},        // userEmail -> { userEmail, mailbox, phone, chatId, pairedAt }
-      mailboxToPhone: {},  // mailbox (key) -> [{ phone, chatId }]
-      userToMailboxes: {}, // userEmail -> [mailboxKey]
-      mailboxToUser: {},   // mailboxKey -> userEmail
-      pendingTokens: {},   // token -> { userEmail, mailbox, createdAt }
-      sentLogs: []         // [ { timestamp, phone, mailbox, type, status } ]
+      pairings: {},
+      mailboxToPhone: {},
+      userToMailboxes: {},
+      mailboxToUser: {},
+      pendingTokens: {},
+      sentLogs: []
     };
 
     this.loadData();
@@ -67,7 +121,13 @@ class WABotService {
     }
   }
 
-  // ===== REGISTER MAILBOX FOR USER =====
+  _notifyPairingReady() {
+    const waiters = this._pairingReadyWaiters.splice(0);
+    for (const resolve of waiters) {
+      try { resolve(true); } catch (_) {}
+    }
+  }
+
   registerUserMailbox(userEmail, mailbox) {
     if (!userEmail || !mailbox) return;
     const uEmail = userEmail.toLowerCase().trim();
@@ -77,154 +137,184 @@ class WABotService {
     if (!this.data.userToMailboxes[uEmail].includes(mbKey)) {
       this.data.userToMailboxes[uEmail].push(mbKey);
     }
-
     this.data.mailboxToUser[mbKey] = uEmail;
 
-    // If this user already has a paired WhatsApp, automatically link this new mailbox!
     const pairing = this.data.pairings[uEmail];
     if (pairing) {
       if (!this.data.mailboxToPhone[mbKey]) this.data.mailboxToPhone[mbKey] = [];
-      const exists = this.data.mailboxToPhone[mbKey].some(e => (typeof e === 'object' ? e.chatId : e) === (pairing.chatId || pairing.phone));
+      const targetChatId = toZapoJid(pairing.chatId || pairing.phone);
+      const exists = this.data.mailboxToPhone[mbKey].some(e => toZapoJid(typeof e === 'object' ? e.chatId : e) === targetChatId);
       if (!exists) {
-        this.data.mailboxToPhone[mbKey].push({
-          phone: pairing.phone,
-          chatId: pairing.chatId || (pairing.phone.includes('@') ? pairing.phone : `${pairing.phone}@c.us`)
-        });
-        console.log(`[WABot] 🔗 Mailbox baru [${mbKey}@enchant.id] otomatis ditautkan ke WhatsApp user ${uEmail} (+${pairing.phone})`);
+        this.data.mailboxToPhone[mbKey].push({ phone: pairing.phone, chatId: targetChatId });
       }
     }
-
     this.saveData();
   }
 
-  // ===== INITIALIZE BOT =====
-  init() {
-    if (this.client) {
-      try { this.client.destroy(); } catch (e) {}
+  async init(options = {}) {
+    const forceQr = !!options.forceQr;
+    if (this._isStarting) return;
+
+    if (this._reconnectTimer) {
+      clearTimeout(this._reconnectTimer);
+      this._reconnectTimer = null;
     }
 
+    const hasPaired = hasSavedSqliteAuth(SQLITE_PATH);
+    if (!forceQr && !hasPaired) {
+      this.status = 'DISCONNECTED';
+      this.qrDataUrl = null;
+      this.pairingCode = null;
+      console.log('[WABot] Standby (belum ada sesi login). Buka WA Panel untuk Scan QR / Pairing Code.');
+      return;
+    }
+
+    this._isStarting = true;
+    this._manualStop = false;
     this.status = 'INITIALIZING';
     this.qrDataUrl = null;
+    this.pairingCode = null;
     this.errorMessage = null;
 
-    console.log('[WABot] 🚀 Initializing WhatsApp Web Client...');
-
     try {
-      const winChrome = 'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe';
-      const linuxChromeCandidates = [
-        '/usr/bin/google-chrome-stable',
-        '/usr/bin/google-chrome',
-        '/usr/bin/chromium-browser',
-        '/usr/bin/chromium'
-      ];
-      const linuxChrome = linuxChromeCandidates.find(p => fs.existsSync(p));
-
-      const puppeteerOpts = {
-        headless: true,
-        args: [
-          '--no-sandbox',
-          '--disable-setuid-sandbox',
-          '--disable-dev-shm-usage',
-          '--disable-accelerated-2d-canvas',
-          '--no-first-run',
-          '--no-zygote',
-          '--disable-gpu'
-        ]
-      };
-      if (process.platform === 'win32' && fs.existsSync(winChrome)) {
-        puppeteerOpts.executablePath = winChrome;
-      } else if (linuxChrome) {
-        puppeteerOpts.executablePath = linuxChrome;
+      if (this.client) {
+        try { await this.client.disconnect(); } catch (_) {}
+        this.client = null;
       }
 
-      this.client = new Client({
-        authStrategy: new LocalAuth({
-          dataPath: path.join(__dirname, '.wabot_auth')
-        }),
-        puppeteer: puppeteerOpts
+      if (!fs.existsSync(SESSION_DIR)) {
+        fs.mkdirSync(SESSION_DIR, { recursive: true });
+      }
+
+      const sqliteBackend = createSqliteStore({ path: SQLITE_PATH });
+      this.store = createStore({
+        backends: { sqlite: sqliteBackend },
+        providers: {
+          auth: 'sqlite', signal: 'sqlite', preKey: 'sqlite', session: 'sqlite',
+          identity: 'sqlite', senderKey: 'sqlite', appState: 'sqlite',
+          messages: 'none', threads: 'none', contacts: 'none', privacyToken: 'sqlite'
+        }
       });
 
-      this.client.on('qr', async (qr) => {
-        console.log('[WABot] 📱 QR Code received, generating data URL for Admin Dashboard...');
+      this.client = new WaClient(
+        { store: this.store, sessionId: SESSION_ID },
+        new ConsoleLogger('warn')
+      );
+
+      this.client.on('auth_qr', async ({ qr }) => {
         this.status = 'WAITING_QR';
         try {
           this.qrDataUrl = await qrcode.toDataURL(qr, { width: 320, margin: 2 });
         } catch (err) {
           console.error('[WABot] QR Error:', err.message);
         }
+        this._notifyPairingReady();
+        console.log('[WABot] QR Code baru siap di-scan.');
       });
 
-      this.client.on('authenticated', () => {
-        console.log('[WABot] 🔐 WhatsApp authenticated successfully.');
-        this.status = 'INITIALIZING';
-        this.qrDataUrl = null;
+      this.client.on('auth_pairing_code', ({ code }) => {
+        this.pairingCode = code ? (code.match(/.{1,4}/g)?.join('-') || code) : null;
+        this.status = 'WAITING_QR';
       });
 
-      this.client.on('auth_failure', (msg) => {
-        console.error('[WABot] ❌ Auth failure:', msg);
-        this.status = 'ERROR';
-        this.errorMessage = 'Gagal autentikasi WhatsApp: ' + msg;
+      this.client.on('auth_pairing_required', async ({ forceManual }) => {
+        this._notifyPairingReady();
+        if (forceManual && this.status !== 'CONNECTED') {
+          console.log('[WABot] Batas waktu QR habis, kembali ke mode Standby.');
+          await this.disconnect();
+        }
       });
 
-      this.client.on('ready', () => {
+      this.client.on('auth_paired', ({ credentials }) => {
+        const meJid = credentials?.meJid || '';
         this.status = 'CONNECTED';
         this.qrDataUrl = null;
-        this.botNumber = this.client.info && this.client.info.wid ? this.client.info.wid.user : 'Unknown';
-        this.botName = this.client.info && this.client.info.pushname ? this.client.info.pushname : 'Enchant Bot';
-        console.log(`[WABot] 🟢 WhatsApp Bot READY! Connected as ${this.botName} (+${this.botNumber})`);
+        this.pairingCode = null;
+        this.botNumber = meJid.split('@')[0]?.split(':')[0] || this.botNumber;
+        this.botName = credentials?.pushName || 'Enchant AM Bot';
+        console.log('[WABot] Berhasil terhubung sebagai +' + this.botNumber);
       });
 
-      this.client.on('disconnected', (reason) => {
-        console.warn('[WABot] ⚠️ WhatsApp disconnected:', reason);
-        this.status = 'DISCONNECTED';
-        this.qrDataUrl = null;
-        this.botNumber = null;
+      this.client.on('connection', ({ status, isLogout }) => {
+        if (status === 'open') {
+          const creds = this.client?.getCredentials?.();
+          const meJid = creds?.meJid || '';
+          this.status = 'CONNECTED';
+          this.qrDataUrl = null;
+          this.pairingCode = null;
+          this.errorMessage = null;
+          this.botNumber = meJid.split('@')[0]?.split(':')[0] || this.botNumber;
+          this.botName = creds?.pushName || this.botName || 'Enchant AM Bot';
+          console.log('[WABot] Koneksi WhatsApp AKTIF (+' + (this.botNumber || 'connected') + ')');
+        } else if (status === 'close') {
+          const wasPaired = hasSavedSqliteAuth(SQLITE_PATH);
+          if (isLogout) {
+            console.warn('[WABot] Perangkat di-unlink dari HP, membersihkan sesi...');
+            this.logout().catch(() => {});
+            return;
+          }
+          if (!this._manualStop && wasPaired) {
+            this.status = 'INITIALIZING';
+            this._reconnectTimer = setTimeout(() => {
+              if (!this._manualStop && this.status !== 'CONNECTED') {
+                this.init({ forceQr: false }).catch(() => {});
+              }
+            }, 4000);
+          } else if (!wasPaired) {
+            this.status = 'DISCONNECTED';
+            this.qrDataUrl = null;
+          }
+        }
       });
 
-      // Handle Incoming WhatsApp Messages for Pairing
-      const handleMsg = async (msg) => {
+      this.client.on('message', async (event) => {
         try {
-          await this.handleIncomingWhatsAppMessage(msg);
+          await this.handleIncomingWhatsAppMessage(event);
         } catch (e) {
           console.error('[WABot] Message Handler Error:', e.message);
         }
-      };
+      });
 
-      this.client.on('message', handleMsg);
-      this.client.on('message_create', handleMsg);
+      await this.client.connect();
 
-      this.client.initialize().catch((err) => {
+      const creds = this.client?.getCredentials?.();
+      if (creds?.meJid) {
+        this.status = 'CONNECTED';
+        this.botNumber = creds.meJid.split('@')[0]?.split(':')[0] || this.botNumber;
+        this.botName = creds.pushName || 'Enchant AM Bot';
+        this.qrDataUrl = null;
+        this.pairingCode = null;
+      }
+    } catch (err) {
+      if (this._manualStop) {
+        this.status = 'DISCONNECTED';
+        this.errorMessage = null;
+      } else {
         console.error('[WABot] Init Error:', err.message);
         this.status = 'ERROR';
         this.errorMessage = err.message;
-      });
-
-    } catch (err) {
-      console.error('[WABot] Setup Error:', err.message);
-      this.status = 'ERROR';
-      this.errorMessage = err.message;
+      }
+    } finally {
+      this._isStarting = false;
     }
   }
 
-  // ===== HANDLE INCOMING MESSAGE (PAIRING) =====
-  async handleIncomingWhatsAppMessage(msg) {
-    if (!msg || !msg.body) return;
+  async handleIncomingWhatsAppMessage(event) {
+    const rawChatId = event?.chatJid || event?.key?.remoteJid || '';
+    if (!rawChatId) return;
+    if (rawChatId.endsWith('@g.us') || rawChatId.endsWith('@newsletter') || rawChatId.endsWith('@broadcast')) return;
 
-    const rawText = (msg.body || '').trim();
+    const rawText = extractTextFromMessage(event?.message).trim();
     if (!rawText) return;
 
     const upperText = rawText.toUpperCase();
-    const isFromMe = !!msg.fromMe;
-    const chatId = msg.from;
-    const fromPhone = (chatId.includes('@') ? chatId.split('@')[0] : chatId).replace(/[^0-9]/g, '');
+    const chatId = toZapoJid(rawChatId);
+    const senderSource = event?.senderPn || event?.senderJid || rawChatId;
+    const fromPhone = (senderSource.includes('@') ? senderSource.split('@')[0].split(':')[0] : senderSource).replace(/[^0-9]/g, '');
 
-    console.log(`[WABot] 💬 Pesan WhatsApp diterima [Chat: ${chatId} | From: +${fromPhone} | FromMe: ${isFromMe}]: "${rawText}"`);
-
-    // Find any token in pendingTokens
     let foundToken = null;
     let tokenInfo = null;
 
-    // Check all active pending tokens
     for (const [tKey, tData] of Object.entries(this.data.pendingTokens || {})) {
       if (upperText.includes(tKey.toUpperCase())) {
         foundToken = tKey;
@@ -233,7 +323,6 @@ class WABotService {
       }
     }
 
-    // Fallback regex match for ENC-XXXX format
     if (!foundToken) {
       const match = upperText.match(/ENC-[A-Z0-9]{3,8}/);
       if (match && this.data.pendingTokens[match[0]]) {
@@ -243,32 +332,26 @@ class WABotService {
     }
 
     if (foundToken && tokenInfo) {
-      console.log(`[WABot] 🎯 Token valid ditemukan: ${foundToken} untuk user ${tokenInfo.userEmail}`);
-
       const userEmail = (tokenInfo.userEmail || 'user').toLowerCase().trim();
       const rawMb = (tokenInfo.mailbox || 'user').toLowerCase().trim().replace(/@enchant\.id$/, '');
-      const fullMailbox = `${rawMb}@enchant.id`;
+      const fullMailbox = rawMb + '@enchant.id';
       const targetPhone = fromPhone || this.botNumber || 'User';
 
-      // Save exact WhatsApp chatId (supports @lid and @c.us)
       const pairingRecord = {
         userEmail,
         mailbox: fullMailbox,
         phone: targetPhone,
-        chatId: chatId,
+        chatId,
         pairedAt: new Date().toISOString()
       };
-
       this.data.pairings[userEmail] = pairingRecord;
 
-      // Register mailbox index for CURRENT mailbox
       if (!this.data.mailboxToPhone[rawMb]) this.data.mailboxToPhone[rawMb] = [];
-      const existingEntry = this.data.mailboxToPhone[rawMb].find(e => (typeof e === 'object' ? e.chatId : e) === chatId);
+      const existingEntry = this.data.mailboxToPhone[rawMb].find(e => toZapoJid(typeof e === 'object' ? e.chatId : e) === chatId);
       if (!existingEntry) {
         this.data.mailboxToPhone[rawMb].push({ phone: targetPhone, chatId });
       }
 
-      // Also auto-link ALL previous & current mailboxes created by this user!
       if (!this.data.userToMailboxes[userEmail]) this.data.userToMailboxes[userEmail] = [];
       if (!this.data.userToMailboxes[userEmail].includes(rawMb)) {
         this.data.userToMailboxes[userEmail].push(rawMb);
@@ -277,88 +360,61 @@ class WABotService {
 
       this.data.userToMailboxes[userEmail].forEach(mb => {
         if (!this.data.mailboxToPhone[mb]) this.data.mailboxToPhone[mb] = [];
-        const found = this.data.mailboxToPhone[mb].some(e => (typeof e === 'object' ? e.chatId : e) === chatId);
+        const found = this.data.mailboxToPhone[mb].some(e => toZapoJid(typeof e === 'object' ? e.chatId : e) === chatId);
         if (!found) {
           this.data.mailboxToPhone[mb].push({ phone: targetPhone, chatId });
         }
       });
 
-      // Clean up token
       delete this.data.pendingTokens[foundToken];
       this.saveData();
 
-      console.log(`[WABot] 🔗 Berhasil menghubungkan WhatsApp [ChatId: ${chatId}] -> ${userEmail} (${fullMailbox} & ${this.data.userToMailboxes[userEmail].length} mailbox)`);
-
-      // Reply confirmation to WhatsApp
-      const replyText = `🤖 *ENCHANT NOTIFICATION BOT*\n━━━━━━━━━━━━━━━━━━━\n` +
-        `✅ *MAIL CONNECTED!*\n\n` +
-        `📧 *Akun Gmail:* ${userEmail}\n` +
-        `📬 *Mailbox Aktif:* ${fullMailbox}\n` +
-        `📱 *WhatsApp:* +${targetPhone}\n` +
-        `🕒 *Waktu:* ${new Date().toLocaleString('id-ID')}\n\n` +
-        `✨ *Status: AKTIF*\n` +
-        `Nomor WhatsApp ini sekarang terhubung ke akun Anda. Setiap kali membuat atau login akun AM di mailbox @enchant.id mana pun, *Link Login & Kode OTP* akan otomatis dikirimkan ke sini tanpa perlu connect ulang!\n━━━━━━━━━━━━━━━━━━━`;
+      const replyText = '🤖 *ENCHANT NOTIFICATION BOT*\n━━━━━━━━━━━━━━━━━━━\n' +
+        '✅ *MAIL CONNECTED!*\n\n' +
+        '📧 *Akun Gmail:* ' + userEmail + '\n' +
+        '📬 *Mailbox Aktif:* ' + fullMailbox + '\n' +
+        '📱 *WhatsApp:* +' + targetPhone + '\n' +
+        '🕒 *Waktu:* ' + new Date().toLocaleString('id-ID') + '\n\n' +
+        '✨ *Status: AKTIF*\n' +
+        'Nomor WhatsApp ini sekarang terhubung ke akun Anda. Setiap kali membuat atau login akun AM di mailbox @enchant.id mana pun, *Link Login & Kode OTP* akan otomatis dikirimkan ke sini tanpa perlu connect ulang!\n━━━━━━━━━━━━━━━━━━━';
 
       try {
-        if (typeof msg.reply === 'function') {
-          await msg.reply(replyText);
-        } else {
-          await this.client.sendMessage(chatId, replyText);
-        }
-        console.log(`[WABot] 📤 Balasan Mail Connected terkirim ke ${chatId}`);
+        await this.client.message.send(chatId, replyText);
       } catch (err) {
-        console.warn(`[WABot] Fallback sendMessage to ${chatId}:`, err.message);
-        try {
-          await this.client.sendMessage(chatId, replyText);
-        } catch (e2) {
-          console.error('[WABot] Gagal mengirim konfirmasi balasan:', e2.message);
-        }
+        console.error('[WABot] Gagal mengirim konfirmasi balasan:', err.message);
       }
     }
   }
 
-  // ===== GENERATE PAIR TOKEN =====
   generatePairToken(userEmail, mailbox = '') {
     const rand = Math.random().toString(36).substring(2, 6).toUpperCase();
-    const token = `ENC-${rand}`;
-
+    const token = 'ENC-' + rand;
     this.data.pendingTokens[token] = {
       userEmail: (userEmail || '').trim().toLowerCase(),
       mailbox: (mailbox || '').trim().toLowerCase(),
       createdAt: new Date().toISOString(),
-      expiresAt: Date.now() + 15 * 60 * 1000 // 15 mins
+      expiresAt: Date.now() + 15 * 60 * 1000
     };
-
     this.saveData();
 
     const botNum = this.botNumber || '';
-    const messageTemplate = encodeURIComponent(`CONNECT ENCHANT ${token}`);
-    const waUrl = botNum ? `https://wa.me/${botNum}?text=${messageTemplate}` : null;
-
-    return {
-      token,
-      botNumber: botNum,
-      waUrl,
-      expiresInMinutes: 15
-    };
+    const messageTemplate = encodeURIComponent('CONNECT ENCHANT ' + token);
+    const waUrl = botNum ? ('https://wa.me/' + botNum + '?text=' + messageTemplate) : null;
+    return { token, botNumber: botNum, waUrl, expiresInMinutes: 15 };
   }
 
-  // ===== CHECK PAIR STATUS =====
   checkPairStatus(userEmail, token) {
     const email = (userEmail || '').trim().toLowerCase();
     const pairing = this.data.pairings[email];
     if (pairing) {
       return { connected: true, phone: pairing.phone, mailbox: pairing.mailbox, pairedAt: pairing.pairedAt };
     }
-
     if (token && !this.data.pendingTokens[token]) {
       return { connected: false, expired: true };
     }
-
     return { connected: false, pending: true };
   }
 
-  // ===== DISCONNECT / UNPAIR USER =====
   unpairUser(userEmail) {
     const email = (userEmail || '').trim().toLowerCase();
     const pairing = this.data.pairings[email];
@@ -374,117 +430,85 @@ class WABotService {
     return { success: false, error: 'User belum terhubung.' };
   }
 
-  // ===== FORWARD INCOMING EMAIL TO WHATSAPP =====
   async forwardEmailNotification({ mailboxKey, from, to, subject, text, html, otp, loginLink }) {
     if (this.status !== 'CONNECTED' || !this.client) return false;
-
     const key = (mailboxKey || '').toLowerCase().trim();
-    
-    // Collect all target recipients (from mailbox index AND pairings)
     const targets = [];
 
-    // 1. Check mailboxToPhone
-    const mbTargets = this.data.mailboxToPhone[key] || [];
-    mbTargets.forEach(t => targets.push(t));
-
-    // 2. Check all pairings matching mailbox or user
+    (this.data.mailboxToPhone[key] || []).forEach(t => targets.push(t));
     Object.values(this.data.pairings || {}).forEach(p => {
       const pMb = (p.mailbox || '').toLowerCase().replace(/@enchant\.id$/, '');
       if (pMb === key || (to && p.mailbox && p.mailbox.toLowerCase() === to.toLowerCase())) {
-        if (!targets.some(existing => (existing.chatId || existing) === (p.chatId || p.phone))) {
-          targets.push({ phone: p.phone, chatId: p.chatId || (p.phone.includes('@') ? p.phone : `${p.phone}@c.us`) });
+        const jid = toZapoJid(p.chatId || p.phone);
+        if (!targets.some(existing => toZapoJid(existing.chatId || existing) === jid)) {
+          targets.push({ phone: p.phone, chatId: jid });
         }
       }
     });
 
-    if (!targets || targets.length === 0) {
-      console.log(`[WABot] ℹ️ Tidak ada user WhatsApp yang terhubung untuk mailbox: [${key}] (${to})`);
-      return false;
-    }
+    if (!targets.length) return false;
 
-    console.log(`[WABot] 🚀 Menyiapkan penerusan email ke ${targets.length} penerima WhatsApp...`);
-
-    let messageBody = `📩 *[ENCHANT MAIL] PESAN BARU DITERIMA*\n━━━━━━━━━━━━━━━━━━━\n` +
-      `👤 *Dari:* ${from || 'noreply@alight-creative.firebaseapp.com'}\n` +
-      `📬 *Mailbox:* ${to || `${key}@enchant.id`}\n` +
-      `📋 *Subjek:* ${subject || '(Tanpa Subjek)'}\n` +
-      `🕒 *Waktu:* ${new Date().toLocaleString('id-ID')}\n\n`;
+    let messageBody = '📩 *[ENCHANT MAIL] PESAN BARU DITERIMA*\n━━━━━━━━━━━━━━━━━━━\n' +
+      '👤 *Dari:* ' + (from || 'noreply@alight-creative.firebaseapp.com') + '\n' +
+      '📬 *Mailbox:* ' + (to || (key + '@enchant.id')) + '\n' +
+      '📋 *Subjek:* ' + (subject || '(Tanpa Subjek)') + '\n' +
+      '🕒 *Waktu:* ' + new Date().toLocaleString('id-ID') + '\n\n';
 
     if (loginLink) {
-      messageBody += `🔗 *LINK LOGIN ALIGHT CREATIVE TERDETEKSI:*\n${loginLink}\n\n` +
-        `💡 _Klik link di atas pada HP kamu untuk langsung masuk ke akun Alight Motion tanpa buka website!_\n\n`;
+      messageBody += '🔗 *LINK LOGIN ALIGHT CREATIVE TERDETEKSI:*\n' + loginLink + '\n\n' +
+        '💡 _Klik link di atas pada HP kamu untuk langsung masuk ke akun Alight Motion tanpa buka website!_\n\n';
     }
-
     if (otp) {
-      messageBody += `🔑 *KODE OTP:* *${otp}*\n\n`;
+      messageBody += '🔑 *KODE OTP:* *' + otp + '*\n\n';
     }
-
     const snippet = (text || html || '').replace(/<[^>]+>/g, ' ').substring(0, 140).trim();
     if (snippet && !loginLink) {
-      messageBody += `📄 *Isi Pesan:* ${snippet}...\n\n`;
+      messageBody += '📄 *Isi Pesan:* ' + snippet + '...\n\n';
     }
-
-    messageBody += `━━━━━━━━━━━━━━━━━━━\n_Dikirim otomatis oleh Enchant AM Premium Engine_`;
+    messageBody += '━━━━━━━━━━━━━━━━━━━\n_Dikirim otomatis oleh Enchant AM Premium Engine_';
 
     for (const target of targets) {
-      let destChatId = typeof target === 'object' ? (target.chatId || target.phone) : target;
-      let displayPhone = typeof target === 'object' ? target.phone : target;
-
-      if (!destChatId.includes('@')) {
-        destChatId = `${destChatId}@c.us`;
-      }
-
+      const destChatId = toZapoJid(typeof target === 'object' ? (target.chatId || target.phone) : target);
+      const displayPhone = typeof target === 'object' ? target.phone : target;
+      if (!destChatId) continue;
       try {
-        await this.client.sendMessage(destChatId, messageBody);
-        console.log(`[WABot] ✅ Berhasil meneruskan pesan ke WhatsApp ${destChatId} (+${displayPhone})`);
-
+        await this.client.message.send(destChatId, messageBody);
         if (!this.data.sentLogs) this.data.sentLogs = [];
         this.data.sentLogs.unshift({
           timestamp: new Date().toISOString(),
           phone: displayPhone,
-          mailbox: `${key}@enchant.id`,
+          mailbox: key + '@enchant.id',
           type: loginLink ? 'MAGIC_LINK' : (otp ? 'OTP' : 'EMAIL'),
           status: 'SUCCESS'
         });
         if (this.data.sentLogs.length > 50) this.data.sentLogs.pop();
         this.saveData();
-
       } catch (err) {
-        console.error(`[WABot] Gagal mengirim ke ${destChatId}:`, err.message);
+        console.error('[WABot] Gagal mengirim ke ' + destChatId + ':', err.message);
       }
     }
-
     return true;
   }
 
-  // ===== SEND NOTIFICATION TO ADMIN ON NEW ACTIVATION =====
   async sendAdminNotification({ userEmail, targetEmail, mode, expiresAt, durationSeconds, ip }) {
-    if (this.status !== 'CONNECTED' || !this.client) {
-      console.log('[WABot] ⚠️ WA Bot belum connected, notif admin tidak dapat dikirim.');
-      return false;
-    }
-
+    if (this.status !== 'CONNECTED' || !this.client) return false;
     const ADMIN_NUMBER = '6285704625361';
-    const adminChatId = `${ADMIN_NUMBER}@c.us`;
-
+    const adminChatId = toZapoJid(ADMIN_NUMBER);
     const modeText = mode === 'auto' ? '⚡ Otomatis (@enchant.id)' : '✍️ Manual (Email Pribadi)';
     const expText = expiresAt ? (typeof expiresAt === 'number' ? new Date(expiresAt).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' }) : expiresAt) : '1 Tahun (365 Hari)';
 
-    const message = `🔔 *[NOTIFIKASI AKTIVASI BARU]*\n` +
-      `━━━━━━━━━━━━━━━━━━━\n` +
-      `👤 *User Login Web:* ${userEmail || '(Guest/Anonim)'}\n` +
-      `💎 *Email AM Pro:* \`${targetEmail}\`\n` +
-      `⚙️ *Metode:* ${modeText}\n` +
-      `⏳ *Masa Aktif:* ${expText}\n` +
-      `⏱️ *Durasi Proses:* ${durationSeconds ? durationSeconds.toFixed(1) + 's' : '-'}\n` +
-      `🌐 *IP Pengguna:* ${ip || '-'}\n` +
-      `🕒 *Waktu:* ${new Date().toLocaleString('id-ID', { timeZone: 'Asia/Jakarta' })}\n` +
-      `━━━━━━━━━━━━━━━━━━━\n` +
-      `_Notifikasi Admin Enchant AM Premium Hub_`;
+    const message = '🔔 *[NOTIFIKASI AKTIVASI BARU]*\n━━━━━━━━━━━━━━━━━━━\n' +
+      '👤 *User Login Web:* ' + (userEmail || '(Guest/Anonim)') + '\n' +
+      '💎 *Email AM Pro:* `' + targetEmail + '`\n' +
+      '⚙️ *Metode:* ' + modeText + '\n' +
+      '⏳ *Masa Aktif:* ' + expText + '\n' +
+      '⏱️ *Durasi Proses:* ' + (durationSeconds ? durationSeconds.toFixed(1) + 's' : '-') + '\n' +
+      '🌐 *IP Pengguna:* ' + (ip || '-') + '\n' +
+      '🕒 *Waktu:* ' + new Date().toLocaleString('id-ID', { timeZone: 'Asia/Jakarta' }) + '\n' +
+      '━━━━━━━━━━━━━━━━━━━\n_Notifikasi Admin Enchant AM Premium Hub_';
 
     try {
-      await this.client.sendMessage(adminChatId, message);
-      console.log(`[WABot] 📢 Notifikasi aktivasi berhasil dikirim ke Admin WhatsApp (${ADMIN_NUMBER})`);
+      await this.client.message.send(adminChatId, message);
       return true;
     } catch (err) {
       console.error('[WABot] ❌ Gagal mengirim notif ke Admin WhatsApp:', err.message);
@@ -492,11 +516,12 @@ class WABotService {
     }
   }
 
-  // ===== GET BOT STATUS & METRICS FOR ADMIN =====
   getStatus() {
     return {
       status: this.status,
+      connected: this.status === 'CONNECTED',
       qrDataUrl: this.qrDataUrl,
+      pairingCode: this.pairingCode,
       botNumber: this.botNumber,
       botName: this.botName,
       errorMessage: this.errorMessage,
@@ -506,27 +531,85 @@ class WABotService {
     };
   }
 
-  // ===== RESTART BOT =====
-  restart() {
-    console.log('[WABot] 🔄 Restarting WhatsApp Bot...');
-    this.init();
-    return { success: true, message: 'WhatsApp Bot sedang di-restart...' };
+  async startPairing() {
+    await this.init({ forceQr: true });
+    return { success: true, message: 'Memulai sesi QR WhatsApp...', ...this.getStatus() };
   }
 
-  // ===== LOGOUT BOT =====
-  async logout() {
+  async disconnect() {
+    this._manualStop = true;
+    if (this._reconnectTimer) {
+      clearTimeout(this._reconnectTimer);
+      this._reconnectTimer = null;
+    }
+    this._notifyPairingReady();
     if (this.client) {
-      try {
-        await this.client.logout();
-        await this.client.destroy();
-      } catch (e) {}
+      try { await this.client.disconnect(); } catch (_) {}
+      this.client = null;
     }
     this.status = 'DISCONNECTED';
     this.qrDataUrl = null;
+    this.pairingCode = null;
+    return { success: true, message: 'WhatsApp Bot dihentikan sementara (Standby).' };
+  }
+
+  restart() {
+    console.log('[WABot] 🔄 Restarting WhatsApp Bot (QR active)...');
+    this.init({ forceQr: true }).catch((e) => console.error('[WABot] Restart err:', e.message));
+    return { success: true, message: 'WhatsApp Bot sedang memuat QR Code baru...' };
+  }
+
+  async requestPairingCode(phoneNumber) {
+    let cleaned = String(phoneNumber || '').replace(/[^0-9]/g, '');
+    if (cleaned.startsWith('0')) cleaned = '62' + cleaned.slice(1);
+    if (!cleaned || cleaned.length < 8) {
+      throw new Error('Nomor WhatsApp tidak valid (contoh: 628123456789).');
+    }
+
+    if (!this.client || (this.status !== 'WAITING_QR' && this.status !== 'INITIALIZING')) {
+      const readyPromise = new Promise((resolve) => {
+        this._pairingReadyWaiters.push(resolve);
+        setTimeout(() => resolve(false), 9000);
+      });
+      await this.init({ forceQr: true });
+      if (!this.qrDataUrl) {
+        await readyPromise;
+      }
+    }
+
+    if (!this.client || !this.client.auth) {
+      throw new Error('Client WhatsApp belum siap, coba klik Tampilkan QR terlebih dahulu.');
+    }
+
+    const rawCode = await this.client.auth.requestPairingCode(cleaned);
+    const formatted = rawCode ? (rawCode.match(/.{1,4}/g)?.join('-') || rawCode) : rawCode;
+    this.pairingCode = formatted;
+    return formatted;
+  }
+
+  async logout() {
+    this._manualStop = true;
+    if (this._reconnectTimer) {
+      clearTimeout(this._reconnectTimer);
+      this._reconnectTimer = null;
+    }
+    if (this.client) {
+      try { await this.client.logout(); } catch (_) {}
+      try { await this.client.disconnect(); } catch (_) {}
+      this.client = null;
+    }
+    try {
+      if (fs.existsSync(SESSION_DIR)) {
+        fs.rmSync(SESSION_DIR, { recursive: true, force: true });
+      }
+    } catch (_) {}
+    this.status = 'DISCONNECTED';
+    this.qrDataUrl = null;
+    this.pairingCode = null;
     this.botNumber = null;
+    this.botName = null;
     this.saveData();
-    this.init();
-    return { success: true, message: 'WhatsApp Bot berhasil logout. Scan QR ulang.' };
+    return { success: true, message: 'WhatsApp Bot berhasil logout. Klik Tampilkan QR / Pairing Code untuk menautkan nomor baru.' };
   }
 }
 

@@ -10,6 +10,13 @@ const path = require('path');
 
 const REGISTRY_FILE = path.join(__dirname, 'mailboxes.json');
 const MESSAGES_FILE = path.join(__dirname, 'messages.json');
+const DOMAINS_FILE = path.join(__dirname, 'domains.json');
+const DEFAULT_DOMAINS = [
+  'enchant.id', 'yume.tech', 'zettx.web.id', 'when-yaa.my.id', 'enchant.cyou',
+  'guai.web.id', 'gunturafandy.id', 'gunturafandy.my.id', 'omnifarma.web.id',
+  'otepeh.web.id', 'owh.biz.id', 'politeknik-banyuwangi.web.id', 'upcode.web.id',
+  'wab.web.id', 'chloera.store'
+];
 
 class EmailStore extends EventEmitter {
   constructor() {
@@ -17,6 +24,9 @@ class EmailStore extends EventEmitter {
     this.inboxes = new Map(); // normalized key -> Array of messages
     this.messageIndex = new Map(); // message id -> message object
     this.mailboxes = new Set(); // Set of registered normalized usernames
+    this._saveTimer = null;
+    this._saving = false;
+    this._savePending = false;
 
     this.loadFromDisk();
   }
@@ -46,54 +56,131 @@ class EmailStore extends EventEmitter {
   }
 
   saveToDisk() {
+    if (this._saveTimer) clearTimeout(this._saveTimer);
+    this._saveTimer = setTimeout(() => {
+      this._saveTimer = null;
+      this._flushAsync();
+    }, 300);
+  }
+
+  async _flushAsync() {
+    if (this._saving) {
+      this._savePending = true;
+      return;
+    }
+    this._saving = true;
     try {
-      fs.writeFileSync(REGISTRY_FILE, JSON.stringify([...this.mailboxes], null, 2), 'utf8');
+      const regTmp = REGISTRY_FILE + '.tmp';
+      const msgTmp = MESSAGES_FILE + '.tmp';
+      await fs.promises.writeFile(regTmp, JSON.stringify([...this.mailboxes], null, 2), 'utf8');
+      await fs.promises.rename(regTmp, REGISTRY_FILE);
       const allMsgs = [...this.messageIndex.values()];
-      fs.writeFileSync(MESSAGES_FILE, JSON.stringify(allMsgs, null, 2), 'utf8');
+      await fs.promises.writeFile(msgTmp, JSON.stringify(allMsgs), 'utf8');
+      await fs.promises.rename(msgTmp, MESSAGES_FILE);
     } catch (e) {
       console.error('[EmailStore] Error saving disk data:', e.message);
+    } finally {
+      this._saving = false;
+      if (this._savePending) {
+        this._savePending = false;
+        this._flushAsync();
+      }
     }
   }
 
-  normalizeKey(emailOrUser) {
+  flushSync() {
+    try {
+      fs.writeFileSync(REGISTRY_FILE + '.tmp', JSON.stringify([...this.mailboxes], null, 2), 'utf8');
+      fs.renameSync(REGISTRY_FILE + '.tmp', REGISTRY_FILE);
+      const allMsgs = [...this.messageIndex.values()];
+      fs.writeFileSync(MESSAGES_FILE + '.tmp', JSON.stringify(allMsgs), 'utf8');
+      fs.renameSync(MESSAGES_FILE + '.tmp', MESSAGES_FILE);
+    } catch (e) {
+      console.error('[EmailStore] Error flushing disk data:', e.message);
+    }
+  }
+
+  getDomains() {
+    try {
+      if (fs.existsSync(DOMAINS_FILE)) {
+        const list = JSON.parse(fs.readFileSync(DOMAINS_FILE, 'utf8'));
+        if (Array.isArray(list) && list.length > 0) return list.map(d => String(d).trim().toLowerCase()).filter(Boolean);
+      }
+    } catch (e) {}
+    return DEFAULT_DOMAINS;
+  }
+
+  normalizeDomain(domain) {
+    if (!domain) return 'enchant.id';
+    let d = String(domain).trim().toLowerCase().replace(/^@+/, '');
+    if (d.startsWith('mail.')) {
+      const stripped = d.slice(5);
+      if (this.getDomains().includes(stripped)) d = stripped;
+    }
+    return d;
+  }
+
+  isSupportedDomain(domain) {
+    const d = this.normalizeDomain(domain);
+    return this.getDomains().includes(d);
+  }
+
+  normalizeKey(emailOrUser, defaultDomain = 'enchant.id') {
     if (!emailOrUser) return '';
-    let norm = emailOrUser.trim().toLowerCase();
-    if (norm.endsWith('@enchant.id') || norm.endsWith('@mail.enchant.id')) {
-      return norm.split('@')[0];
+    let norm = String(emailOrUser).trim().toLowerCase();
+    if (norm.startsWith('@')) norm = norm.slice(1);
+    if (norm.includes('@')) {
+      const [rawLocal, rawDom] = norm.split('@');
+      const local = rawLocal.replace(/[^a-z0-9_.-]/g, '');
+      const dom = this.normalizeDomain(rawDom);
+      if (!local) return '';
+      return dom === 'enchant.id' ? local : `${local}@${dom}`;
     }
-    if (norm.startsWith('@')) {
-      norm = norm.slice(1);
-    }
-    return norm;
+    const local = norm.replace(/[^a-z0-9_.-]/g, '');
+    if (!local) return '';
+    const dom = this.normalizeDomain(defaultDomain);
+    return dom === 'enchant.id' ? local : `${local}@${dom}`;
+  }
+
+  keyToEmail(key) {
+    if (!key) return '';
+    return key.includes('@') ? key : `${key}@enchant.id`;
+  }
+
+  keyToUsername(key) {
+    if (!key) return '';
+    return key.includes('@') ? key.split('@')[0] : key;
   }
 
   // Register a mailbox
-  registerMailbox(emailOrUser) {
-    const key = this.normalizeKey(emailOrUser);
+  registerMailbox(emailOrUser, domain = 'enchant.id') {
+    const key = this.normalizeKey(emailOrUser, domain);
     if (!key) return null;
     this.mailboxes.add(key);
     if (!this.inboxes.has(key)) {
       this.inboxes.set(key, []);
     }
     this.saveToDisk();
+    const fullEmail = this.keyToEmail(key);
     return {
-      username: key,
-      email: `${key}@enchant.id`,
+      username: this.keyToUsername(key),
+      email: fullEmail,
+      domain: fullEmail.split('@')[1],
       createdAt: new Date().toISOString()
     };
   }
 
   // Check if mailbox exists
-  isMailboxRegistered(emailOrUser) {
-    const key = this.normalizeKey(emailOrUser);
+  isMailboxRegistered(emailOrUser, defaultDomain = 'enchant.id') {
+    const key = this.normalizeKey(emailOrUser, defaultDomain);
     return this.mailboxes.has(key);
   }
 
   // List all registered mailboxes
   listMailboxes() {
     return [...this.mailboxes].map(key => ({
-      username: key,
-      email: `${key}@enchant.id`,
+      username: this.keyToUsername(key),
+      email: this.keyToEmail(key),
       messageCount: (this.inboxes.get(key) || []).length
     }));
   }
@@ -207,7 +294,7 @@ class EmailStore extends EventEmitter {
     const msg = {
       id,
       from: messageData.from || 'unknown@sender.com',
-      to: recipient.includes('@') ? recipient : `${recipient}@enchant.id`,
+      to: recipient.includes('@') ? recipient.trim().toLowerCase() : this.keyToEmail(key),
       subject: messageData.subject || '(Tanpa Subjek)',
       text,
       html,
@@ -252,4 +339,7 @@ class EmailStore extends EventEmitter {
   }
 }
 
-module.exports = new EmailStore();
+const storeInstance = new EmailStore();
+process.once('SIGTERM', () => storeInstance.flushSync());
+process.once('SIGINT', () => storeInstance.flushSync());
+module.exports = storeInstance;

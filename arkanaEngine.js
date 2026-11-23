@@ -129,9 +129,9 @@ class ArkanaEngine {
   }
 
   // Manual step 2: verify with magic link
-  async manualVerify(magicLink) {
-    this._log(`🔗 Manual verify...`);
-    return await this._runWorker(['verify', magicLink]);
+  async manualVerify(magicLink, jobId = '', email = '') {
+    this._log(`🔗 Manual verify (JobId: ${jobId ? jobId.substring(0, 20) + '...' : 'none'})...`);
+    return await this._runWorker(['verify', magicLink, jobId || '', email || '']);
   }
 }
 

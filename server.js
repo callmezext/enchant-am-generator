@@ -14,21 +14,23 @@ const arkanaEngine = require('./arkanaEngine');
 const statsManager = require('./statsManager');
 const waBotService = require('./waBotService');
 
-process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
-
-try { smtpReceiver.start(2525); } catch (e) { console.log('[SMTP]', e.message); }
+if (process.env.ENABLE_SMTP === 'true') {
+  try { smtpReceiver.start(Number(process.env.SMTP_PORT) || 2526); } catch (e) { console.log('[SMTP]', e.message); }
+}
 
 // Initialize WhatsApp Web Bot
 try { waBotService.init(); } catch (e) { console.error('[WABot] Auto-init Error:', e.message); }
 
 const manualSessions = new Map();
 const app = express();
-app.use(express.json({ limit: '50mb' }));
-app.use(express.urlencoded({ extended: true, limit: '50mb' }));
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
 app.use((req, res, next) => {
   res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate');
   res.setHeader('Pragma', 'no-cache');
+  res.setHeader('X-Content-Type-Options', 'nosniff');
+  res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
   next();
 });
 
@@ -74,20 +76,39 @@ app.use((req, res, next) => {
   const host = (req.hostname || req.headers.host || '').toLowerCase();
   const isApi = req.path.startsWith('/api/');
   const hasExt = path.extname(req.path) !== '';
-  if (host.includes('mail.enchant.id') && !isApi && !hasExt) return res.sendFile(path.join(__dirname, 'public', 'mail.html'));
-  if ((host.includes('am.enchant.id') || req.path === '/' || req.path === '/index.html') && !isApi && !hasExt) return res.sendFile(path.join(__dirname, 'public', 'index.html'));
+  if (host.includes('am.enchant.id')) {
+    return res.status(404).send('Service disabled');
+  }
+  if ((host.includes('mail.enchant.id') || host.includes('mail.yume.tech') || req.path === '/' || req.path === '/index.html') && !isApi && !hasExt) {
+    return res.sendFile(path.join(__dirname, 'public', 'mail.html'));
+  }
   next();
 });
 app.get(['/mail', '/mail/:u'], (req, res) => res.sendFile(path.join(__dirname, 'public', 'mail.html')));
 app.use(express.static(path.join(__dirname, 'public')));
 
 // ===== TEMP MAIL API =====
+app.get(['/api/v1/domains', '/api/domains'], (req, res) => {
+  res.json({ success: true, domains: emailStore.getDomains() });
+});
+
 app.get(['/api/v1/mailbox/search', '/api/mailbox/search'], (req, res) => {
   const q = req.query.q || req.query.email || req.query.username;
   if (!q) return res.status(400).json({ success: false, error: 'Masukkan email.' });
-  const key = emailStore.normalizeKey(q);
-  if (!emailStore.isMailboxRegistered(key)) return res.status(404).json({ success: false, exists: false, error: `"${key}@enchant.id" belum dibuat.` });
-  res.json({ success: true, exists: true, username: key, email: `${key}@enchant.id`, messages: emailStore.getMessages(key) });
+  const dom = req.query.domain || 'enchant.id';
+  const key = emailStore.normalizeKey(q, dom);
+  const fullEmail = emailStore.keyToEmail(key);
+  if (!key || !emailStore.isMailboxRegistered(key)) {
+    return res.status(404).json({ success: false, exists: false, error: `"${fullEmail}" belum dibuat.` });
+  }
+  res.json({
+    success: true,
+    exists: true,
+    username: emailStore.keyToUsername(key),
+    email: fullEmail,
+    domain: fullEmail.split('@')[1],
+    messages: emailStore.getMessages(key)
+  });
 });
 
 app.post(['/api/v1/mailbox/create', '/api/mailbox/create'], (req, res) => {
@@ -100,18 +121,31 @@ app.post(['/api/v1/mailbox/create', '/api/mailbox/create'], (req, res) => {
     return res.status(403).json({ success: false, banned: true, error: spamCheck.reason });
   }
 
-  let { username } = req.body || {};
-  if (username) username = username.toLowerCase().trim().replace(/[^a-z0-9_.-]/g, '');
+  let { username, domain } = req.body || {};
+  domain = emailStore.normalizeDomain(domain || 'enchant.id');
+  if (!emailStore.isSupportedDomain(domain)) {
+    return res.status(400).json({ success: false, error: `Domain "${domain}" tidak terdaftar.` });
+  }
+  if (username && String(username).includes('@')) {
+    const parts = String(username).trim().toLowerCase().split('@');
+    username = parts[0];
+    if (parts[1] && emailStore.isSupportedDomain(parts[1])) {
+      domain = emailStore.normalizeDomain(parts[1]);
+    }
+  }
+  if (username) username = String(username).toLowerCase().trim().replace(/[^a-z0-9_.-]/g, '');
   if (!username) username = 'user_' + crypto.randomBytes(4).toString('hex');
-  const isNew = !emailStore.isMailboxRegistered(username);
-  const mb = emailStore.registerMailbox(username);
+
+  const key = emailStore.normalizeKey(username, domain);
+  const isNew = !emailStore.isMailboxRegistered(key);
+  const mb = emailStore.registerMailbox(username, domain);
 
   // Auto-link to WhatsApp if user is authenticated
   if (userEmail && userEmail !== 'guest' && mb.email) {
     waBotService.registerUserMailbox(userEmail, mb.email);
   }
 
-  res.json({ success: true, email: mb.email, username: mb.username, isNew });
+  res.json({ success: true, email: mb.email, username: mb.username, domain: mb.domain, isNew });
 });
 
 app.get(['/api/v1/mail/inbox', '/api/mail/inbox'], (req, res) => {
@@ -119,7 +153,7 @@ app.get(['/api/v1/mail/inbox', '/api/mail/inbox'], (req, res) => {
   if (!email) return res.status(400).json({ success: false, error: 'Email wajib.' });
   const key = emailStore.normalizeKey(email);
   if (!emailStore.isMailboxRegistered(key)) return res.status(404).json({ success: false, error: 'Mailbox belum dibuat.' });
-  res.json({ success: true, email: `${key}@enchant.id`, messages: emailStore.getMessages(key) });
+  res.json({ success: true, email: emailStore.keyToEmail(key), messages: emailStore.getMessages(key) });
 });
 
 app.delete(['/api/v1/mail/message/:id', '/api/mail/message/:id'], (req, res) => {
@@ -143,12 +177,21 @@ app.get(['/api/v1/mail/events', '/api/mail/events'], (req, res) => {
 });
 
 app.post(['/api/mail/webhook', '/api/v1/mail/webhook'], async (req, res) => {
+  const expectedSecret = process.env.WEBHOOK_SECRET;
+  if (expectedSecret) {
+    const provided = String(req.headers['x-webhook-secret'] || '');
+    const a = Buffer.from(provided);
+    const b = Buffer.from(expectedSecret);
+    if (a.length !== b.length || !crypto.timingSafeEqual(a, b)) {
+      return res.status(401).json({ success: false, error: 'Unauthorized webhook' });
+    }
+  }
   try { const msg = await smtpReceiver.handleWebhook(req.body, req.headers); res.json({ success: true, id: msg.id }); }
   catch (e) { res.status(400).json({ success: false, error: e.message }); }
 });
 
 // ===== CLOUDFLARE TURNSTILE VERIFICATION =====
-const CF_TURNSTILE_SECRET = '0x4AAAAAAEYI0X2herXz9JgG3A0ecjqrwGQ';
+const CF_TURNSTILE_SECRET = process.env.CF_TURNSTILE_SECRET || '0x4AAAAAAEYI0X2herXz9JgG3A0ecjqrwGQ';
 
 app.post('/api/verify-turnstile', async (req, res) => {
   const { token, remoteip } = req.body || {};
@@ -226,6 +269,48 @@ app.get('/api/admin/security', (req, res) => {
   }
 });
 
+// ===== LOCALHOST INTERNAL CONTROL APIS FOR WA HUB PANEL =====
+function requireLocalhost(req, res, next) {
+  const ip = req.socket?.remoteAddress || '';
+  if (ip === '127.0.0.1' || ip === '::1' || ip === '::ffff:127.0.0.1') return next();
+  return res.status(403).json({ success: false, error: 'Localhost only' });
+}
+
+app.get('/api/internal/wa/status', requireLocalhost, (req, res) => {
+  res.json({ success: true, ...waBotService.getStatus() });
+});
+
+app.post('/api/internal/wa/action', requireLocalhost, async (req, res) => {
+  try {
+    const { action } = req.body || {};
+    let result = { success: true };
+    if (action === 'connect' || action === 'qr') {
+      result = await waBotService.startPairing();
+    } else if (action === 'disconnect' || action === 'stop') {
+      result = await waBotService.disconnect();
+    } else if (action === 'restart') {
+      result = waBotService.restart();
+    } else if (action === 'logout' || action === 'reset') {
+      result = await waBotService.logout();
+    } else {
+      return res.status(400).json({ success: false, error: 'Action tidak dikenal' });
+    }
+    res.json({ ...result, status: waBotService.getStatus() });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+app.post('/api/internal/wa/pair', requireLocalhost, async (req, res) => {
+  try {
+    const { phoneNumber } = req.body || {};
+    const code = await waBotService.requestPairingCode(phoneNumber);
+    res.json({ success: true, code, status: waBotService.getStatus() });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
 // ===== WHATSAPP BOT USER & ADMIN APIS =====
 app.get('/api/wa/status', (req, res) => {
   res.json({ success: true, ...waBotService.getStatus() });
@@ -272,12 +357,12 @@ app.post('/api/admin/wa/logout', async (req, res) => {
 });
 
 // ===== MODE 1: OTOMATIS (random atau custom @enchant.id) =====
-app.post('/api/activate', async (req, res) => {
+app.post(['/api/activate', '/api/activate-auto'], async (req, res) => {
   const clientIp = getClientIp(req);
-  const authUserEmail = (req.body.authUserEmail || '').trim().toLowerCase();
+  const authUserEmail = (req.body.authUserEmail || req.body.userEmail || '').trim().toLowerCase();
   
-  // Mandatory @gmail.com validation
-  if (authUserEmail && !authUserEmail.endsWith('@gmail.com')) {
+  // Mandatory @gmail.com validation if provided
+  if (authUserEmail && !authUserEmail.endsWith('@gmail.com') && authUserEmail !== 'guest') {
     return res.status(403).json({ success: false, error: 'Hanya akun @gmail.com yang diizinkan untuk menggunakan layanan ini.' });
   }
 
@@ -295,7 +380,7 @@ app.post('/api/activate', async (req, res) => {
 
   const startTime = Date.now();
   try {
-    const customName = req.body.username || req.body.email || '';
+    const customName = req.body.username || req.body.customUsername || req.body.email || '';
     console.log(`[AM] 🚀 Mode Otomatis [IP: ${clientIp} | User: ${authUserEmail || 'guest'}]: Membuat akun @enchant.id (${customName || 'Random'}) & aktivasi...`);
     const result = await arkanaEngine.activateAuto(customName);
 
@@ -431,18 +516,18 @@ app.post('/api/activate/bulk', async (req, res) => {
       throw new Error(result.error || 'Gagal eksekusi bulk generator.');
     }
   } catch (err) {
-    console.error('[AM Bulk Error]:', err.message);
+    console.error('[Bulk Error]:', err.message);
     res.status(500).json({ success: false, error: err.message });
   }
 });
 
 // ===== MODE 2: MANUAL - Step 1: Kirim link verifikasi =====
-app.post('/api/manual/send', async (req, res) => {
+app.post(['/api/manual/send', '/api/manual-send-link'], async (req, res) => {
   const clientIp = getClientIp(req);
-  const authUserEmail = (req.body.authUserEmail || '').trim().toLowerCase();
+  const authUserEmail = (req.body.authUserEmail || req.body.userEmail || '').trim().toLowerCase();
   
   // Mandatory @gmail.com validation
-  if (authUserEmail && !authUserEmail.endsWith('@gmail.com')) {
+  if (authUserEmail && !authUserEmail.endsWith('@gmail.com') && authUserEmail !== 'guest') {
     return res.status(403).json({ success: false, error: 'Hanya akun @gmail.com yang diizinkan untuk menggunakan layanan ini.' });
   }
 
@@ -495,48 +580,52 @@ app.post('/api/manual/send', async (req, res) => {
 });
 
 // ===== MODE 2: MANUAL - Step 2: Verifikasi & aktifkan premium =====
-app.post('/api/manual/verify', async (req, res) => {
-  const { sessionId, magicLink } = req.body;
-  if (!sessionId || !magicLink) return res.status(400).json({ success: false, error: 'Session ID dan Link wajib diisi.' });
+app.post(['/api/manual/verify', '/api/manual-verify-link'], async (req, res) => {
+  const { sessionId, magicLink, link } = req.body;
+  const targetLink = magicLink || link;
+  const userEmail = (req.body.authUserEmail || req.body.userEmail || '').trim().toLowerCase();
+  
+  if (!targetLink) return res.status(400).json({ success: false, error: 'Link verifikasi wajib diisi.' });
 
-  const session = manualSessions.get(sessionId);
-  if (!session) return res.status(400).json({ success: false, error: 'Sesi kedaluwarsa. Ulangi langkah 1.' });
+  const session = sessionId ? manualSessions.get(sessionId) : null;
+  const email = session ? session.email : (req.body.email || '');
 
-  const startTime = session.createdAt || Date.now();
+  const startTime = (session && session.createdAt) || Date.now();
   try {
-    console.log(`[AM] Mode Manual: Verifikasi untuk ${session.email}...`);
-    const result = await arkanaEngine.manualVerify(magicLink.trim());
+    const jobId = session ? session.jobId : (req.body.jobId || '');
+    console.log(`[AM] Mode Manual: Verifikasi untuk ${email || 'manual target'} (JobId: ${jobId ? jobId.substring(0, 20) + '...' : 'none'})...`);
+    const result = await arkanaEngine.manualVerify(targetLink.trim(), jobId, email);
 
-    manualSessions.delete(sessionId);
+    if (sessionId) manualSessions.delete(sessionId);
     const durationSeconds = (Date.now() - startTime) / 1000;
 
     if (result.success) {
       statsManager.recordActivation({
-        userEmail: session.authUserEmail,
-        targetEmail: result.email || session.email,
+        userEmail: session ? session.authUserEmail : userEmail,
+        targetEmail: result.email || email,
         mode: 'manual',
         durationSeconds
       });
 
       // Send WhatsApp alert to Admin
       waBotService.sendAdminNotification({
-        userEmail: session.authUserEmail,
-        targetEmail: result.email || session.email,
+        userEmail: session ? session.authUserEmail : userEmail,
+        targetEmail: result.email || email,
         mode: 'manual',
         expiresAt: result.expiresAt,
         durationSeconds,
-        ip: session.clientIp
+        ip: session ? session.clientIp : getClientIp(req)
       }).catch(e => console.error('[Admin Notif Error]:', e.message));
 
       const exp = formatExpiryDate(result.expiresAt);
       res.json({
         success: true,
-        email: result.email || session.email,
+        email: result.email || email,
         status: 'PREMIUM_ACTIVE',
         premiumExpiresAt: exp,
         durationSeconds: parseFloat(durationSeconds.toFixed(1)),
         activationDetail: result.activationDetail || 'Play Billing Resmi',
-        message: `Akun ${result.email || session.email} berhasil diaktifkan Premium hingga ${exp}!`
+        message: `Akun ${result.email || email} berhasil diaktifkan Premium hingga ${exp}!`
       });
     } else {
       throw new Error(result.error || 'Verifikasi gagal.');

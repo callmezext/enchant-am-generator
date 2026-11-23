@@ -11,7 +11,7 @@ const puppeteer = require('puppeteer');
 const http = require('http');
 const fs = require('fs');
 
-const PORT = process.env.PORT || '3001';
+const PORT = process.env.PORT || '3055';
 const MAIL_API = `http://127.0.0.1:${PORT}/api/v1/mail/inbox`;
 
 function getChromePath() {
@@ -65,6 +65,8 @@ async function getBrowser() {
       '--disable-dev-shm-usage',
       '--disable-gpu',
       '--disable-extensions',
+      '--disable-blink-features=AutomationControlled',
+      '--window-size=1920,1080',
       '--no-first-run',
       '--no-zygote',
       '--blink-settings=imagesEnabled=false'
@@ -72,9 +74,25 @@ async function getBrowser() {
   });
 }
 
+async function setupPageStealth(page) {
+  await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36');
+  await page.evaluateOnNewDocument(() => {
+    Object.defineProperty(navigator, 'webdriver', { get: () => undefined });
+  });
+}
+
 async function ensureStep1(page) {
   const startTime = Date.now();
-  while (Date.now() - startTime < 15000) {
+  
+  // Check if stuck on Vercel checkpoint and wait for auto-redirect
+  try {
+    const title = await page.title();
+    if (title.includes('Vercel Security Checkpoint')) {
+      await page.waitForNavigation({ waitUntil: 'networkidle2', timeout: 15000 }).catch(() => {});
+    }
+  } catch (e) {}
+
+  while (Date.now() - startTime < 20000) {
     const emailInp = await page.$('#customEmailInput');
     if (emailInp) {
       const isVisible = await page.evaluate((el) => {
@@ -122,6 +140,7 @@ async function processSingleAccount(context, email) {
   const startTime = Date.now();
   console.log(`[Worker] ⚡ Fast pipeline starting for ${email}...`);
   const page = await context.newPage();
+  await setupPageStealth(page);
 
   let verifyApiResult = null;
   page.on('response', async (res) => {
@@ -353,11 +372,45 @@ async function handleSend(email) {
   try {
     const context = await browser.createBrowserContext();
     const page = await context.newPage();
-    await page.goto('https://arkanastudio.xyz/', { waitUntil: 'networkidle2', timeout: 25000 }).catch(() => {});
+    await setupPageStealth(page);
+    await page.goto('https://arkanastudio.xyz/', { waitUntil: 'domcontentloaded', timeout: 25000 }).catch(() => {});
 
+    try {
+      const title = await page.title();
+      if (title.includes('Vercel Security Checkpoint')) {
+        await page.waitForNavigation({ waitUntil: 'networkidle2', timeout: 15000 }).catch(() => {});
+      }
+    } catch (e) {}
+
+    // Method 1: Fast in-browser API execution
+    const genResult = await page.evaluate(async (amEmail) => {
+      try {
+        const res = await fetch('/api/generate', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ amEmail })
+        });
+        return { status: res.status, data: await res.json() };
+      } catch (e) {
+        return { error: e.message };
+      }
+    }, email);
+
+    if (genResult.data && genResult.data.id) {
+      const result = {
+        success: true,
+        email,
+        jobId: genResult.data.id,
+        message: `Link verifikasi berhasil dikirim ke ${email}!`
+      };
+      console.log(`RESULT_JSON:${JSON.stringify(result)}`);
+      return result;
+    }
+
+    // Method 2: DOM UI interaction fallback
     const okStep1 = await ensureStep1(page);
     if (!okStep1) {
-      throw new Error('Cannot reach Step 1 input form on ArkanStudio');
+      throw new Error(genResult.data?.error || 'Cannot reach Step 1 input form on ArkanStudio');
     }
 
     await page.click('#customEmailInput', { clickCount: 3 });
@@ -388,54 +441,94 @@ async function handleSend(email) {
   }
 }
 
-async function handleVerify(magicLink) {
-  console.log(`[Worker] Starting VERIFY mode...`);
+async function handleVerify(magicLink, maybeJobId = '', maybeEmail = '') {
+  console.log(`[Worker] Starting VERIFY mode (JobId: ${maybeJobId ? maybeJobId.substring(0, 20) + '...' : 'none'})...`);
   const browser = await getBrowser();
   try {
     const context = await browser.createBrowserContext();
     const page = await context.newPage();
+    await setupPageStealth(page);
+    await page.goto('https://arkanastudio.xyz/', { waitUntil: 'domcontentloaded', timeout: 25000 }).catch(() => {});
 
-    let verifyApiResult = null;
-    page.on('response', async (res) => {
-      if (res.url().includes('verify-link') || res.url().includes('/verify')) {
-        try {
-          const data = await res.json();
-          if (data && (data.state === 'SUCCESS' || data.activatedAt)) {
-            verifyApiResult = data;
-          }
-        } catch (e) {}
+    try {
+      const title = await page.title();
+      if (title.includes('Vercel Security Checkpoint')) {
+        await page.waitForNavigation({ waitUntil: 'networkidle2', timeout: 15000 }).catch(() => {});
       }
-    });
+    } catch (e) {}
 
-    await page.goto('https://arkanastudio.xyz/', { waitUntil: 'networkidle2', timeout: 25000 }).catch(() => {});
+    // Method 1: Direct API verify if jobId is present
+    if (maybeJobId && maybeJobId.startsWith('job_v1:')) {
+      const verifyResult = await page.evaluate(async (jId, link) => {
+        try {
+          const res = await fetch('/api/generate/' + jId + '/verify-link', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ link })
+          });
+          return { status: res.status, data: await res.json() };
+        } catch (e) {
+          return { error: e.message };
+        }
+      }, maybeJobId, magicLink);
+
+      if (verifyResult.data && (verifyResult.data.state === 'SUCCESS' || verifyResult.data.activatedAt)) {
+        let exp = '1 Tahun Aktif';
+        if (verifyResult.data.expiresAt) {
+          exp = new Date(verifyResult.data.expiresAt).toLocaleDateString('id-ID', {
+            day: 'numeric',
+            month: 'long',
+            year: 'numeric'
+          });
+        }
+        const result = {
+          success: true,
+          email: verifyResult.data.amEmail || maybeEmail,
+          status: 'PREMIUM_ACTIVE',
+          expiresAt: exp,
+          activationDetail: 'Play Billing Resmi 1 Tahun'
+        };
+        console.log(`RESULT_JSON:${JSON.stringify(result)}`);
+        return result;
+      }
+    }
+
+    // Method 2: DOM UI fallback
+    const okStep1 = await ensureStep1(page);
+    if (maybeEmail) {
+      await page.click('#customEmailInput', { clickCount: 3 });
+      await page.type('#customEmailInput', maybeEmail);
+      const allBtns = await page.$$('button');
+      for (const b of allBtns) {
+        const txt = await page.evaluate((el) => el.innerText.trim(), b);
+        if (txt.includes('Kirim link aktivasi') || txt.includes('Kirim')) {
+          await b.click();
+          break;
+        }
+      }
+      await page.waitForSelector('#customMagicLinkInput', { timeout: 15000 }).catch(() => {});
+    }
 
     let magicInput = await page.$('#customMagicLinkInput');
     if (!magicInput) {
-      await ensureStep1(page);
-      magicInput = await page.$('#customMagicLinkInput');
+      const inputs = await page.$$('input');
+      if (inputs.length > 0) magicInput = inputs[0];
     }
 
     if (!magicInput) {
       throw new Error('Form verifikasi magic link tidak ditemukan di ArkanStudio');
     }
 
-    await page.click('#customMagicLinkInput', { clickCount: 3 });
-    await page.type('#customMagicLinkInput', magicLink);
+    await magicInput.click({ clickCount: 3 });
+    await magicInput.type(magicLink);
 
     const step2Btns = await page.$$('button');
-    let verifyBtn = null;
     for (const b of step2Btns) {
       const txt = await page.evaluate((el) => el.innerText.trim(), b);
       if (txt.includes('Verifikasi & Aktifkan Lisensi') || txt.includes('Aktifkan') || txt.includes('Verifikasi')) {
-        verifyBtn = b;
+        await b.click();
         break;
       }
-    }
-
-    if (verifyBtn) {
-      await verifyBtn.click();
-    } else {
-      await page.keyboard.press('Enter');
     }
 
     let success = false;
@@ -443,18 +536,6 @@ async function handleVerify(magicLink) {
     const vStart = Date.now();
 
     while (Date.now() - vStart < 25000) {
-      if (verifyApiResult && verifyApiResult.state === 'SUCCESS') {
-        success = true;
-        if (verifyApiResult.expiresAt) {
-          expiresAt = new Date(verifyApiResult.expiresAt).toLocaleDateString('id-ID', {
-            day: 'numeric',
-            month: 'long',
-            year: 'numeric'
-          });
-        }
-        break;
-      }
-
       const pageText = await page.evaluate(() => document.body.innerText);
       if (
         pageText.includes('Premium aktif') ||
@@ -479,6 +560,7 @@ async function handleVerify(magicLink) {
 
     const result = {
       success: true,
+      email: maybeEmail,
       status: 'PREMIUM_ACTIVE',
       expiresAt:
         expiresAt ||
@@ -501,17 +583,19 @@ async function main() {
   const args = process.argv.slice(2);
   const mode = args[0] || 'auto';
   const target = args[1] || '';
-  const concurrency = parseInt(args[2] || '3', 10);
+  const extraArg = args[2] || '';
+  const extraArg2 = args[3] || '';
 
   try {
     if (mode === 'auto') {
       await handleAuto(target);
     } else if (mode === 'bulk') {
+      const concurrency = parseInt(extraArg || '3', 10);
       await handleBulk(target, concurrency);
     } else if (mode === 'send') {
       await handleSend(target);
     } else if (mode === 'verify') {
-      await handleVerify(target);
+      await handleVerify(target, extraArg, extraArg2);
     } else {
       console.log(`RESULT_JSON:{"success":false,"error":"Mode ${mode} not implemented"}`);
     }
