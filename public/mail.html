@@ -87,27 +87,35 @@
       transform: scale(0.985);
     }
 
+    button:focus-visible,
+    a:focus-visible,
+    input:focus-visible,
+    select:focus-visible,
+    [role="button"]:focus-visible {
+      outline: 2px solid var(--yume-xp);
+      outline-offset: 2px;
+    }
+
     ::-webkit-scrollbar { width: 6px; height: 6px; }
     ::-webkit-scrollbar-track { background: #0e0f15; }
     ::-webkit-scrollbar-thumb { background: #26272d; border-radius: 9999px; }
     ::-webkit-scrollbar-thumb:hover { background: #37383e; }
   </style>
 </head>
-<body class="min-h-screen flex flex-col items-center justify-start p-4 sm:p-8 antialiased selection:bg-[#80ff20] selection:text-[#06070c] relative overflow-x-hidden">
+<!-- DESIGN: Yume Utility Dark | Accent #80ff20 + #8be8cb | Mobile-first single column max-w-2xl -->
+<body class="min-h-screen flex flex-col items-center justify-start p-3 sm:p-8 antialiased selection:bg-[#80ff20] selection:text-[#06070c] relative overflow-x-clip">
 
-  <!-- Noise Texture & Subtle Top Glow -->
+  <!-- Subtle Surface Noise -->
   <div class="fixed inset-0 yume-noise pointer-events-none -z-10"></div>
-  <div class="fixed top-[-140px] left-1/2 -translate-x-1/2 w-[640px] h-[280px] bg-[#80ff20]/[0.05] blur-[130px] rounded-full pointer-events-none -z-10"></div>
-  <div class="fixed bottom-[-120px] right-1/4 w-[420px] h-[240px] bg-[#8be8cb]/[0.04] blur-[130px] rounded-full pointer-events-none -z-10"></div>
 
   <!-- Main Container -->
-  <div class="w-full max-w-2xl mx-auto z-10 flex flex-col items-center">
+  <div class="w-full max-w-2xl mx-auto z-10 flex flex-col items-center min-w-0">
 
     <!-- Top Ecosystem Nav Bar -->
-    <div class="w-full flex items-center justify-between mb-8 pb-4 border-b border-yume-seam">
-      <a href="https://yume.tech" class="inline-flex items-center gap-2.5 group">
-        <span class="w-8 h-8 rounded-lg bg-yume-slab border border-yume-seam group-hover:border-yume-seam2 flex items-center justify-center transition-colors">
-          <svg class="w-5 h-5" viewBox="0 0 32 32" fill="none">
+    <header class="w-full flex flex-wrap items-center justify-between gap-3 mb-6 sm:mb-8 pb-4 border-b border-yume-seam">
+      <a href="https://yume.tech" class="inline-flex items-center gap-2.5 min-h-[44px] py-1 pr-2 rounded-lg group">
+        <span class="w-8 h-8 rounded-lg bg-yume-slab border border-yume-seam group-hover:border-yume-seam2 flex items-center justify-center flex-shrink-0 transition-colors">
+          <svg class="w-5 h-5" viewBox="0 0 32 32" fill="none" aria-hidden="true">
             <rect x="7" y="5" width="4" height="5" rx="1" fill="#f4f4f1"/>
             <rect x="21" y="5" width="4" height="5" rx="1" fill="#f4f4f1"/>
             <rect x="6" y="9" width="20" height="17" rx="4" fill="#f4f4f1"/>
@@ -118,106 +126,100 @@
         <span class="font-mono text-xs font-semibold tracking-widest text-yume-ink uppercase">YUME <span class="text-yume-mute">// MAIL</span></span>
       </a>
 
-      <div class="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-yume-slab border border-yume-seam font-mono text-[11px] text-yume-ink2">
-        <span class="w-2 h-2 rounded-full bg-yume-xp shadow-[0_0_8px_#80ff20]"></span>
+      <div class="inline-flex items-center px-3 py-1.5 rounded-lg bg-yume-slab border border-yume-seam font-mono text-[11px] text-yume-ink2">
         <span id="domainCountBadge">MULTI-DOMAIN ROUTER</span>
       </div>
-    </div>
+    </header>
 
     <!-- Brand Hero -->
-    <div class="w-full mb-7 flex flex-col sm:flex-row sm:items-end justify-between gap-4">
-      <div>
-        <span class="inline-block font-mono text-[11px] uppercase tracking-[0.14em] text-yume-mint bg-yume-mintsoft/70 border border-yume-mint/20 px-2.5 py-1 rounded-md mb-3">
-          CLOUDFLARE EDGE MAILBOX
-        </span>
-        <h1 class="text-2xl sm:text-3xl font-bold text-yume-ink tracking-tight">Yume Mail Hub</h1>
-        <p class="text-sm text-yume-mute mt-1">Terima OTP, verifikasi akun, &amp; kelola kotak masuk instan di seluruh domain aktif.</p>
-      </div>
+    <div class="w-full mb-6 sm:mb-7 flex flex-col gap-2">
+      <h1 class="text-2xl sm:text-3xl font-bold text-yume-ink tracking-tight">Yume Mail Hub</h1>
+      <p class="text-sm text-yume-mute leading-relaxed">Terima OTP, tautan verifikasi, dan kelola kotak masuk instan melalui Cloudflare Email Routing di seluruh domain aktif.</p>
     </div>
 
     <!-- Mode Switcher Tabs -->
-    <div class="w-full p-1.5 rounded-xl bg-yume-slab border border-yume-seam grid grid-cols-2 gap-1.5 mb-5">
-      <button class="tab-btn flex items-center justify-center gap-2 py-2.5 px-4 rounded-lg text-xs font-mono font-semibold uppercase tracking-wider yume-btn bg-yume-xp text-yume-black" id="tabSearch" onclick="switchTab('search')">
-        <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-        <span>Cari Mailbox</span>
+    <div class="w-full p-1.5 rounded-xl bg-yume-slab border border-yume-seam grid grid-cols-2 gap-1.5 mb-5" role="tablist" aria-label="Mode Mailbox">
+      <button type="button" role="tab" aria-selected="true" class="tab-btn flex items-center justify-center gap-1.5 sm:gap-2 min-h-[44px] py-2.5 px-2.5 sm:px-4 rounded-lg text-[11px] sm:text-xs font-mono font-semibold uppercase tracking-wider yume-btn bg-yume-xp text-yume-black" id="tabSearch" onclick="switchTab('search')">
+        <svg class="w-3.5 h-3.5 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        <span class="truncate">Cari Mailbox</span>
       </button>
 
-      <button class="tab-btn flex items-center justify-center gap-2 py-2.5 px-4 rounded-lg text-xs font-mono font-semibold uppercase tracking-wider yume-btn text-yume-mute hover:text-yume-ink hover:bg-yume-slab2" id="tabCreate" onclick="switchTab('create')">
-        <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-        <span>Buat Email Baru</span>
+      <button type="button" role="tab" aria-selected="false" class="tab-btn flex items-center justify-center gap-1.5 sm:gap-2 min-h-[44px] py-2.5 px-2.5 sm:px-4 rounded-lg text-[11px] sm:text-xs font-mono font-semibold uppercase tracking-wider yume-btn text-yume-mute hover:text-yume-ink hover:bg-yume-slab2" id="tabCreate" onclick="switchTab('create')">
+        <svg class="w-3.5 h-3.5 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        <span class="truncate">Buat Email Baru</span>
       </button>
     </div>
 
     <!-- ================= TAB 1: CARI MAILBOX ================= -->
-    <div class="w-full yume-slab rounded-2xl p-5 sm:p-7 mb-6" id="panelSearch">
-      <label class="block text-[11px] font-semibold text-yume-mute uppercase tracking-widest mb-2.5 font-mono">Cari Alamat Email Terdaftar</label>
+    <div class="w-full yume-slab rounded-2xl p-4 sm:p-7 mb-6" id="panelSearch">
+      <label for="searchUserInput" class="block text-[11px] font-semibold text-yume-mute uppercase tracking-widest mb-2.5 font-mono">Cari Alamat Email Terdaftar</label>
 
-      <div class="flex items-stretch mb-4">
-        <input type="text" class="w-full min-w-0 flex-1 bg-[#0e0f15] border border-yume-seam focus:border-yume-xp rounded-l-xl px-4 py-3 text-sm text-yume-ink placeholder-yume-mute/60 font-mono transition-colors outline-none" id="searchUserInput" placeholder="nama email (atau user@domain)" onkeydown="if(event.key==='Enter') doSearchMailbox()">
-        <select id="searchDomainSelect" class="bg-yume-slab2 border border-l-0 border-yume-seam focus:border-yume-xp rounded-r-xl px-3 text-xs font-mono font-semibold text-yume-mint outline-none cursor-pointer flex-shrink-0 max-w-[185px]">
+      <div class="flex flex-col sm:flex-row sm:items-stretch gap-2 sm:gap-0 mb-4">
+        <input type="text" class="w-full min-w-0 sm:flex-1 min-h-[44px] bg-[#0e0f15] border border-yume-seam focus:border-yume-xp rounded-xl sm:rounded-r-none px-3.5 sm:px-4 py-3 text-sm text-yume-ink placeholder-yume-mute/60 font-mono transition-colors" id="searchUserInput" placeholder="nama email (atau user@domain)" onkeydown="if(event.key==='Enter') doSearchMailbox()">
+        <select id="searchDomainSelect" aria-label="Pilih domain pencarian" class="w-full sm:w-auto sm:max-w-[195px] min-h-[44px] bg-yume-slab2 border border-yume-seam sm:border-l-0 focus:border-yume-xp rounded-xl sm:rounded-l-none px-3.5 py-2.5 sm:py-0 text-xs font-mono font-semibold text-yume-mint cursor-pointer sm:flex-shrink-0">
           <option value="enchant.id">@enchant.id</option>
         </select>
       </div>
 
-      <button class="w-full py-3 px-6 rounded-xl bg-yume-xp hover:bg-yume-xphover text-yume-black font-bold text-sm flex items-center justify-center gap-2 yume-btn" onclick="doSearchMailbox()">
-        <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      <button type="button" id="btnSearchSubmit" class="w-full min-h-[48px] py-3 px-5 rounded-xl bg-yume-xp hover:bg-yume-xphover disabled:opacity-60 disabled:cursor-wait text-yume-black font-bold text-sm flex items-center justify-center gap-2 yume-btn" onclick="doSearchMailbox()">
+        <svg class="w-4 h-4 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
         <span>Buka Kotak Masuk</span>
       </button>
 
-      <div class="mt-4 p-3.5 rounded-xl bg-[#351822]/70 border border-rose-500/30 text-rose-200 text-xs font-mono hidden leading-relaxed" id="searchAlert"></div>
+      <div class="mt-4 p-3.5 rounded-xl bg-[#351822]/70 border border-rose-500/30 text-rose-200 text-xs font-mono hidden leading-relaxed break-words" id="searchAlert" role="alert"></div>
     </div>
 
     <!-- ================= TAB 2: BUAT EMAIL BARU ================= -->
-    <div class="w-full yume-slab rounded-2xl p-5 sm:p-7 mb-6 hidden" id="panelCreate">
-      <div class="flex items-center justify-between mb-2.5">
-        <label class="block text-[11px] font-semibold text-yume-mute uppercase tracking-widest font-mono">Nama Email Baru</label>
-        <button type="button" class="inline-flex items-center gap-1.5 text-[11px] font-mono font-semibold text-yume-mint hover:text-yume-ink bg-yume-mintsoft/70 hover:bg-yume-mintsoft border border-yume-mint/25 px-2.5 py-1 rounded-lg yume-btn" onclick="randomizeCreateInput()">
-          <svg class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+    <div class="w-full yume-slab rounded-2xl p-4 sm:p-7 mb-6 hidden" id="panelCreate">
+      <div class="flex flex-wrap items-center justify-between gap-2 mb-2.5">
+        <label for="createUserInput" class="block text-[11px] font-semibold text-yume-mute uppercase tracking-widest font-mono">Nama Email Baru</label>
+        <button type="button" class="inline-flex items-center justify-center gap-1.5 min-h-[44px] text-[11px] font-mono font-semibold text-yume-mint hover:text-yume-ink bg-yume-mintsoft/70 hover:bg-yume-mintsoft border border-yume-mint/25 px-3.5 py-2 rounded-lg yume-btn" onclick="randomizeCreateInput()">
+          <svg class="w-3.5 h-3.5 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
           <span>Acak Nama</span>
         </button>
       </div>
 
-      <div class="flex items-stretch mb-4">
-        <input type="text" class="w-full min-w-0 flex-1 bg-[#0e0f15] border border-yume-seam focus:border-yume-xp rounded-l-xl px-4 py-3 text-sm text-yume-ink placeholder-yume-mute/60 font-mono transition-colors outline-none" id="createUserInput" placeholder="ketik nama atau kosongkan untuk acak" onkeydown="if(event.key==='Enter') doCreateMailbox()">
-        <select id="createDomainSelect" class="bg-yume-slab2 border border-l-0 border-yume-seam focus:border-yume-xp rounded-r-xl px-3 text-xs font-mono font-semibold text-yume-xp outline-none cursor-pointer flex-shrink-0 max-w-[185px]">
+      <div class="flex flex-col sm:flex-row sm:items-stretch gap-2 sm:gap-0 mb-4">
+        <input type="text" class="w-full min-w-0 sm:flex-1 min-h-[44px] bg-[#0e0f15] border border-yume-seam focus:border-yume-xp rounded-xl sm:rounded-r-none px-3.5 sm:px-4 py-3 text-sm text-yume-ink placeholder-yume-mute/60 font-mono transition-colors" id="createUserInput" placeholder="ketik nama atau kosongkan untuk acak" onkeydown="if(event.key==='Enter') doCreateMailbox()">
+        <select id="createDomainSelect" aria-label="Pilih domain email baru" class="w-full sm:w-auto sm:max-w-[195px] min-h-[44px] bg-yume-slab2 border border-yume-seam sm:border-l-0 focus:border-yume-xp rounded-xl sm:rounded-l-none px-3.5 py-2.5 sm:py-0 text-xs font-mono font-semibold text-yume-xp cursor-pointer sm:flex-shrink-0">
           <option value="enchant.id">@enchant.id</option>
         </select>
       </div>
 
-      <button class="w-full py-3 px-6 rounded-xl bg-yume-xp hover:bg-yume-xphover text-yume-black font-bold text-sm flex items-center justify-center gap-2 yume-btn" onclick="doCreateMailbox()">
-        <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+      <button type="button" id="btnCreateSubmit" class="w-full min-h-[48px] py-3 px-5 rounded-xl bg-yume-xp hover:bg-yume-xphover disabled:opacity-60 disabled:cursor-wait text-yume-black font-bold text-sm flex items-center justify-center gap-2 yume-btn" onclick="doCreateMailbox()">
+        <svg class="w-4 h-4 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>
         <span>Buat &amp; Aktifkan Mailbox</span>
       </button>
 
-      <div class="mt-4 p-3.5 rounded-xl bg-yume-mintsoft/60 border border-yume-mint/30 text-yume-mint text-xs font-mono hidden leading-relaxed" id="createAlert"></div>
+      <div class="mt-4 p-3.5 rounded-xl bg-yume-mintsoft/60 border border-yume-mint/30 text-yume-mint text-xs font-mono hidden leading-relaxed break-words" id="createAlert" role="alert"></div>
     </div>
 
     <!-- ================= INBOX CARD (REVEALED WHEN ACTIVE) ================= -->
-    <div class="w-full yume-slab rounded-2xl p-5 sm:p-7 mb-6 hidden" id="inboxCard">
-      <div class="flex flex-col sm:flex-row sm:items-center justify-between pb-5 mb-5 border-b border-yume-seam gap-4">
-        <div>
+    <div class="w-full yume-slab rounded-2xl p-4 sm:p-7 mb-6 hidden" id="inboxCard">
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between pb-4 sm:pb-5 mb-4 sm:mb-5 border-b border-yume-seam gap-4">
+        <div class="min-w-0 flex-1">
           <span class="text-[11px] font-mono font-semibold uppercase tracking-widest text-yume-mute">Active Mailbox</span>
-          <div class="flex items-center gap-2 mt-1">
-            <span class="text-base sm:text-lg font-mono font-bold text-yume-xp break-all" id="currentActiveEmail">---@...</span>
-            <button onclick="copyCurrentEmail()" class="p-1.5 text-yume-ink2 hover:text-yume-ink bg-yume-slab2 hover:bg-yume-seam border border-yume-seam2 rounded-lg yume-btn" title="Salin Email">
-              <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+          <div class="flex items-center gap-2 mt-1 min-w-0">
+            <span class="text-sm sm:text-lg font-mono font-bold text-yume-xp break-all min-w-0 flex-1" id="currentActiveEmail">---@...</span>
+            <button type="button" onclick="copyCurrentEmail()" class="min-w-[44px] min-h-[44px] w-11 h-11 flex items-center justify-center flex-shrink-0 text-yume-ink2 hover:text-yume-ink bg-yume-slab2 hover:bg-yume-seam border border-yume-seam2 rounded-lg yume-btn" title="Salin Email" aria-label="Salin Email Aktif">
+              <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
             </button>
           </div>
         </div>
 
-        <div class="flex items-center gap-2">
-          <button class="px-3.5 py-2 text-xs font-mono font-medium text-yume-ink2 hover:text-yume-ink bg-yume-slab2 hover:bg-yume-seam border border-yume-seam2 rounded-lg flex items-center gap-1.5 yume-btn" onclick="fetchCurrentInbox()" title="Segarkan">
-            <svg class="w-3.5 h-3.5 text-yume-mint" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+        <div class="grid grid-cols-2 sm:flex items-center gap-2 w-full sm:w-auto flex-shrink-0">
+          <button type="button" id="btnRefreshInbox" class="min-h-[44px] px-3.5 py-2 text-xs font-mono font-medium text-yume-ink2 hover:text-yume-ink bg-yume-slab2 hover:bg-yume-seam border border-yume-seam2 rounded-lg flex items-center justify-center gap-1.5 yume-btn disabled:opacity-60" onclick="fetchCurrentInbox(true)" title="Segarkan">
+            <svg class="w-3.5 h-3.5 text-yume-mint flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
             <span>Segarkan</span>
           </button>
-          <button class="px-3.5 py-2 text-xs font-mono font-medium text-rose-300 hover:text-white bg-[#351822]/70 hover:bg-[#351822] border border-rose-500/25 rounded-lg flex items-center gap-1.5 yume-btn" onclick="clearCurrentInbox()" title="Bersihkan Inbox">
-            <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+          <button type="button" class="min-h-[44px] px-3.5 py-2 text-xs font-mono font-medium text-rose-300 hover:text-white bg-[#351822]/70 hover:bg-[#351822] border border-rose-500/25 rounded-lg flex items-center justify-center gap-1.5 yume-btn" onclick="clearCurrentInbox()" title="Bersihkan Inbox">
+            <svg class="w-3.5 h-3.5 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
             <span>Hapus</span>
           </button>
         </div>
       </div>
 
-      <div class="flex items-center justify-between mb-3.5">
+      <div class="flex flex-wrap items-center justify-between gap-2 mb-3.5">
         <span class="text-[11px] font-bold text-yume-ink2 uppercase tracking-widest font-mono">Daftar Email Masuk</span>
         <span class="px-2.5 py-0.5 rounded-md bg-yume-mintsoft text-yume-mint border border-yume-mint/20 text-[11px] font-mono font-semibold" id="inboxCountText">0 Pesan</span>
       </div>
@@ -228,29 +230,30 @@
     </div>
 
     <!-- ================= RIWAYAT MAILBOX SECTION ================= -->
-    <div class="w-full yume-slab rounded-2xl p-5 sm:p-7 mb-6" id="historyCard">
-      <div class="flex items-center justify-between pb-4 mb-4 border-b border-yume-seam">
-        <div class="flex items-center gap-2.5">
-          <div class="w-8 h-8 rounded-lg bg-yume-slab2 border border-yume-seam flex items-center justify-center text-yume-xp shadow-[0_0_12px_rgba(128,255,32,0.12)]">
-            <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <div class="w-full yume-slab rounded-2xl p-4 sm:p-7 mb-6" id="historyCard">
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between pb-4 mb-4 border-b border-yume-seam gap-3">
+        <div class="flex items-start sm:items-center gap-2.5 min-w-0">
+          <div class="w-8 h-8 rounded-lg bg-yume-slab2 border border-yume-seam flex items-center justify-center text-yume-xp flex-shrink-0 mt-0.5 sm:mt-0">
+            <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
               <circle cx="12" cy="12" r="10"/>
               <polyline points="12 6 12 12 16 14"/>
             </svg>
           </div>
-          <div>
-            <div class="flex items-center gap-2">
+          <div class="min-w-0 flex-1">
+            <div class="flex flex-wrap items-center gap-2">
               <h2 class="text-xs font-bold font-mono uppercase tracking-widest text-yume-ink">Riwayat Mailbox Saya</h2>
               <span class="px-2 py-0.5 rounded-full bg-yume-slab2 border border-yume-seam text-yume-xp font-mono text-[10px] font-semibold" id="historyCountBadge">0 Disimpan</span>
             </div>
-            <p class="text-[11px] text-yume-mute font-mono mt-0.5">Daftar email yang pernah Anda buat &amp; akses di browser ini</p>
+            <p class="text-[11px] text-yume-mute font-mono mt-0.5 leading-relaxed">Daftar email yang pernah Anda buat &amp; akses di browser ini</p>
           </div>
         </div>
 
-        <div class="flex items-center gap-1.5 sm:gap-2">
-          <button onclick="refreshHistoryStatuses()" class="p-2 rounded-lg bg-yume-slab2 hover:bg-yume-seam border border-yume-seam2 text-yume-ink2 hover:text-yume-ink yume-btn" title="Cek Status Semua Email">
-            <svg class="w-3.5 h-3.5 text-yume-mint" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+        <div class="flex items-center gap-2 self-stretch sm:self-center flex-shrink-0">
+          <button type="button" id="btnRefreshHistory" onclick="refreshHistoryStatuses(true)" class="min-w-[44px] min-h-[44px] flex-1 sm:flex-initial px-3 py-2 rounded-lg bg-yume-slab2 hover:bg-yume-seam border border-yume-seam2 text-yume-ink2 hover:text-yume-ink flex items-center justify-center gap-1.5 text-xs font-mono yume-btn disabled:opacity-60" title="Cek Status Semua Email" aria-label="Cek Status Semua Email">
+            <svg class="w-3.5 h-3.5 text-yume-mint flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+            <span class="sm:hidden">Cek Status</span>
           </button>
-          <button onclick="clearAllHistory()" class="px-2.5 py-1.5 rounded-lg text-yume-mute hover:text-rose-300 hover:bg-[#351822]/60 border border-yume-seam hover:border-rose-500/30 font-mono text-[11px] transition-colors yume-btn" title="Hapus Semua Riwayat">
+          <button type="button" onclick="clearAllHistory()" class="min-h-[44px] flex-1 sm:flex-initial px-3.5 py-2 rounded-lg text-yume-mute hover:text-rose-300 hover:bg-[#351822]/60 border border-yume-seam hover:border-rose-500/30 font-mono text-xs flex items-center justify-center transition-colors yume-btn" title="Hapus Semua Riwayat">
             Bersihkan
           </button>
         </div>
@@ -258,7 +261,7 @@
 
       <!-- Filter input (shows if items > 3) -->
       <div id="historyFilterContainer" class="hidden mb-3">
-        <input type="text" id="historyFilterInput" oninput="filterHistoryList()" placeholder="Cari dalam riwayat email..." class="w-full bg-[#0e0f15] border border-yume-seam focus:border-yume-xp rounded-xl px-3.5 py-2 text-xs font-mono text-yume-ink placeholder-yume-mute/60 outline-none transition-colors">
+        <input type="text" id="historyFilterInput" aria-label="Cari dalam riwayat email" oninput="filterHistoryList()" placeholder="Cari dalam riwayat email..." class="w-full min-h-[44px] bg-[#0e0f15] border border-yume-seam focus:border-yume-xp rounded-xl px-3.5 py-2.5 text-xs font-mono text-yume-ink placeholder-yume-mute/60 transition-colors">
       </div>
 
       <!-- History Items Container -->
@@ -269,7 +272,7 @@
 
     <!-- Footer Ecosystem Links -->
     <div class="w-full flex flex-wrap items-center justify-between gap-3 pt-2 text-xs font-mono text-yume-mute">
-      <a href="https://yume.tech" class="hover:text-yume-xp transition-colors inline-flex items-center gap-1.5">
+      <a href="https://yume.tech" class="min-h-[44px] py-2 hover:text-yume-xp transition-colors inline-flex items-center gap-1.5 rounded-lg">
         <span>← Kembali ke Lobby yume.tech</span>
       </a>
     </div>
@@ -277,62 +280,62 @@
   </div>
 
   <!-- ================= MESSAGE VIEWER MODAL ================= -->
-  <div class="fixed inset-0 bg-[#06070c]/85 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden" id="msgModal" onclick="closeModal(event)">
+  <div class="fixed inset-0 bg-[#06070c]/85 backdrop-blur-md z-50 flex items-center justify-center p-3 sm:p-4 hidden" id="msgModal" role="dialog" aria-modal="true" aria-labelledby="modalSubject" onclick="closeModal(event)">
     <div class="w-full max-w-2xl yume-slab rounded-2xl overflow-hidden flex flex-col max-h-[90vh]">
       <!-- Modal Header -->
-      <div class="p-5 sm:p-6 bg-yume-slab2/70 border-b border-yume-seam flex items-start justify-between gap-4">
+      <div class="p-4 sm:p-6 bg-yume-slab2/70 border-b border-yume-seam flex items-start justify-between gap-3 sm:gap-4">
         <div class="flex-1 min-w-0">
-          <h3 class="text-base sm:text-lg font-bold text-yume-ink truncate" id="modalSubject">Subjek Pesan</h3>
-          <div class="mt-2 space-y-1 text-xs font-mono text-yume-mute" id="modalMeta"></div>
+          <h3 class="text-base sm:text-lg font-bold text-yume-ink break-words sm:truncate" id="modalSubject">Subjek Pesan</h3>
+          <div class="mt-2 space-y-1 text-xs font-mono text-yume-mute break-words" id="modalMeta"></div>
         </div>
-        <button class="w-8 h-8 rounded-lg bg-yume-slab hover:bg-yume-seam border border-yume-seam2 flex items-center justify-center text-yume-ink2 hover:text-yume-ink transition-colors" onclick="closeModalDirect()">
-          <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        <button type="button" class="min-w-[44px] min-h-[44px] w-11 h-11 rounded-lg bg-yume-slab hover:bg-yume-seam border border-yume-seam2 flex items-center justify-center flex-shrink-0 text-yume-ink2 hover:text-yume-ink transition-colors" onclick="closeModalDirect()" aria-label="Tutup Pesan">
+          <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
         </button>
       </div>
 
       <!-- Modal Body -->
-      <div class="p-5 sm:p-6 overflow-y-auto flex-1 bg-yume-void">
+      <div class="p-4 sm:p-6 overflow-y-auto flex-1 bg-yume-void">
         <!-- Magic Link Banner -->
-        <div class="p-4 rounded-xl bg-yume-mintsoft/50 border border-yume-mint/30 mb-4 hidden flex-col gap-3" id="modalLinkBanner">
+        <div class="p-3.5 sm:p-4 rounded-xl bg-yume-mintsoft/50 border border-yume-mint/30 mb-4 hidden flex-col gap-3" id="modalLinkBanner">
           <div class="flex items-center gap-2 text-xs font-mono font-bold text-yume-mint">
-            <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+            <svg class="w-4 h-4 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
             <span>LINK LOGIN / VERIFIKASI TERDETEKSI</span>
           </div>
           <div class="text-[11px] font-mono text-yume-ink2 bg-yume-slab p-3 rounded-lg border border-yume-seam break-all max-h-24 overflow-y-auto" id="modalLinkVal"></div>
-          <div class="flex gap-2 pt-1">
-            <button class="flex-1 py-2.5 px-4 rounded-lg bg-yume-slab2 hover:bg-yume-seam border border-yume-seam2 text-yume-ink font-mono font-semibold text-xs flex items-center justify-center gap-1.5 yume-btn" onclick="copyLoginLink()">
-              <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+          <div class="flex flex-col sm:flex-row gap-2 pt-1">
+            <button type="button" class="flex-1 min-h-[44px] py-2.5 px-4 rounded-lg bg-yume-slab2 hover:bg-yume-seam border border-yume-seam2 text-yume-ink font-mono font-semibold text-xs flex items-center justify-center gap-1.5 yume-btn" onclick="copyLoginLink()">
+              <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
               <span>Salin Link</span>
             </button>
-            <a class="py-2.5 px-4 rounded-lg bg-yume-xp hover:bg-yume-xphover text-yume-black font-mono font-bold text-xs flex items-center gap-1.5 yume-btn" id="modalLinkOpenBtn" href="#" target="_blank" rel="noopener noreferrer">
+            <a class="min-h-[44px] py-2.5 px-4 rounded-lg bg-yume-xp hover:bg-yume-xphover text-yume-black font-mono font-bold text-xs flex items-center justify-center gap-1.5 yume-btn" id="modalLinkOpenBtn" href="#" target="_blank" rel="noopener noreferrer">
               <span>Buka Link</span>
-              <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+              <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
             </a>
           </div>
         </div>
 
         <!-- OTP Banner -->
-        <div class="p-4 rounded-xl bg-[#123120]/70 border border-yume-xp/30 mb-4 hidden items-center justify-between" id="modalOtpBanner">
+        <div class="p-3.5 sm:p-4 rounded-xl bg-[#123120]/70 border border-yume-xp/30 mb-4 hidden flex-col sm:flex-row sm:items-center justify-between gap-3" id="modalOtpBanner">
           <div>
             <span class="text-[11px] font-mono text-yume-xp font-semibold uppercase block">Kode OTP Terdeteksi</span>
-            <span class="text-xl font-mono font-extrabold text-yume-ink tracking-widest" id="modalOtpCode">------</span>
+            <span class="text-xl font-mono font-extrabold text-yume-ink tracking-widest break-all" id="modalOtpCode">------</span>
           </div>
-          <button class="py-2 px-4 rounded-lg bg-yume-xp hover:bg-yume-xphover text-yume-black font-mono font-bold text-xs yume-btn" onclick="copyOtp()">Salin OTP</button>
+          <button type="button" class="min-h-[44px] w-full sm:w-auto py-2.5 px-4 rounded-lg bg-yume-xp hover:bg-yume-xphover text-yume-black font-mono font-bold text-xs flex items-center justify-center yume-btn" onclick="copyOtp()">Salin OTP</button>
         </div>
 
         <div class="max-w-none text-sm text-yume-ink2 leading-relaxed" id="modalContent"></div>
       </div>
 
       <!-- Modal Footer -->
-      <div class="p-4 sm:p-5 bg-yume-slab2/70 border-t border-yume-seam flex items-center justify-between">
-        <button class="px-4 py-2 text-xs font-mono font-semibold text-rose-300 hover:text-white bg-[#351822]/70 hover:bg-[#351822] border border-rose-500/25 rounded-lg yume-btn" onclick="deleteCurrentMsg()">Hapus Pesan Ini</button>
-        <button class="px-5 py-2 text-xs font-mono font-semibold text-yume-ink2 hover:text-yume-ink bg-yume-slab hover:bg-yume-seam border border-yume-seam2 rounded-lg yume-btn" onclick="closeModalDirect()">Tutup</button>
+      <div class="p-4 sm:p-5 bg-yume-slab2/70 border-t border-yume-seam flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-between gap-2">
+        <button type="button" class="min-h-[44px] px-4 py-2.5 text-xs font-mono font-semibold text-rose-300 hover:text-white bg-[#351822]/70 hover:bg-[#351822] border border-rose-500/25 rounded-lg flex items-center justify-center yume-btn" onclick="deleteCurrentMsg()">Hapus Pesan Ini</button>
+        <button type="button" class="min-h-[44px] px-5 py-2.5 text-xs font-mono font-semibold text-yume-ink2 hover:text-yume-ink bg-yume-slab hover:bg-yume-seam border border-yume-seam2 rounded-lg flex items-center justify-center yume-btn" onclick="closeModalDirect()">Tutup</button>
       </div>
     </div>
   </div>
 
   <!-- Toast Notification Container -->
-  <div id="toast-container" class="fixed bottom-6 right-6 z-50 flex flex-col gap-2 pointer-events-none"></div>
+  <div id="toast-container" aria-live="polite" class="fixed bottom-4 left-4 right-4 sm:left-auto sm:right-6 sm:bottom-6 sm:max-w-sm z-50 flex flex-col gap-2 pointer-events-none"></div>
 
   <!-- Client JavaScript -->
   <script>
@@ -496,44 +499,44 @@
         const timeStr = formatRelativeTime(item.lastOpened || item.createdAt);
         const count = typeof item.messageCount === 'number' ? item.messageCount : 0;
         const countPill = count > 0
-          ? `<span class="px-2 py-0.5 rounded-full bg-[#123120] border border-yume-xp/35 text-yume-xp font-mono text-[10px] font-bold shadow-[0_0_8px_rgba(128,255,32,0.18)]">${count} Pesan</span>`
-          : `<span class="px-1.5 py-0.5 rounded text-[10px] font-mono text-yume-mute/80 bg-yume-slab2">0 Pesan</span>`;
+          ? `<span class="px-2 py-0.5 rounded-full bg-[#123120] border border-yume-xp/35 text-yume-xp font-mono text-[10px] font-bold flex-shrink-0">${count} Pesan</span>`
+          : `<span class="px-1.5 py-0.5 rounded text-[10px] font-mono text-yume-mute/80 bg-yume-slab2 flex-shrink-0">0 Pesan</span>`;
 
         return `
           <div class="p-3 sm:p-3.5 rounded-xl bg-[#0e0f15] hover:bg-yume-slab2 border border-yume-seam hover:border-yume-seam2 flex flex-col sm:flex-row sm:items-center justify-between gap-3 transition-colors group">
-            <div class="flex items-center gap-3 min-w-0">
-              <div class="w-8 h-8 rounded-lg bg-yume-slab border border-yume-seam flex items-center justify-center flex-shrink-0 group-hover:border-yume-xp/40 transition-colors">
-                <svg class="w-4 h-4 text-yume-mint" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <div class="flex items-start sm:items-center gap-3 min-w-0 flex-1">
+              <div class="w-8 h-8 rounded-lg bg-yume-slab border border-yume-seam flex items-center justify-center flex-shrink-0 group-hover:border-yume-xp/40 transition-colors mt-0.5 sm:mt-0">
+                <svg class="w-4 h-4 text-yume-mint" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
                   <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
                   <polyline points="22,6 12,13 2,6"/>
                 </svg>
               </div>
-              <div class="min-w-0">
-                <div class="flex items-center gap-2 flex-wrap">
-                  <span class="font-mono text-xs sm:text-sm font-bold text-yume-ink group-hover:text-yume-xp transition-colors truncate">
+              <div class="min-w-0 flex-1">
+                <div class="flex items-center gap-1.5 sm:gap-2 flex-wrap">
+                  <span class="font-mono text-xs sm:text-sm font-bold text-yume-ink group-hover:text-yume-xp transition-colors break-all">
                     ${escapeHtml(item.email)}
                   </span>
-                  <span class="px-1.5 py-0.5 rounded text-[10px] font-mono bg-yume-mintsoft text-yume-mint border border-yume-mint/20">
+                  <span class="px-1.5 py-0.5 rounded text-[10px] font-mono bg-yume-mintsoft text-yume-mint border border-yume-mint/20 flex-shrink-0">
                     @${escapeHtml(item.domain)}
                   </span>
                   ${countPill}
                 </div>
-                <div class="flex items-center gap-2 mt-0.5 text-[10px] font-mono text-yume-mute">
+                <div class="flex items-center gap-2 mt-1 text-[10px] font-mono text-yume-mute">
                   ${timeStr ? `<span>Terakhir: ${escapeHtml(timeStr)}</span>` : ''}
                 </div>
               </div>
             </div>
 
-            <div class="flex items-center gap-1.5 self-end sm:self-center flex-shrink-0">
-              <button onclick="openFromHistory('${escapeHtml(item.email)}')" class="px-3 py-1.5 rounded-lg bg-yume-xp hover:bg-yume-xphover text-yume-black font-mono font-bold text-xs flex items-center gap-1 yume-btn">
-                <svg class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><polyline points="9 18 15 12 9 6"/></svg>
+            <div class="grid grid-cols-[1fr_44px_44px] sm:flex items-center gap-2 w-full sm:w-auto flex-shrink-0">
+              <button type="button" onclick="openFromHistory('${escapeHtml(item.email)}')" class="min-h-[44px] px-3.5 py-2 rounded-lg bg-yume-xp hover:bg-yume-xphover text-yume-black font-mono font-bold text-xs flex items-center justify-center gap-1.5 yume-btn">
+                <svg class="w-3.5 h-3.5 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" aria-hidden="true"><polyline points="9 18 15 12 9 6"/></svg>
                 <span>Buka</span>
               </button>
-              <button onclick="copyEmailDirect('${escapeHtml(item.email)}')" class="p-1.5 rounded-lg bg-yume-slab border border-yume-seam hover:border-yume-seam2 text-yume-ink2 hover:text-yume-ink yume-btn" title="Salin Email">
-                <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+              <button type="button" onclick="copyEmailDirect('${escapeHtml(item.email)}')" class="min-w-[44px] min-h-[44px] w-11 h-11 rounded-lg bg-yume-slab border border-yume-seam hover:border-yume-seam2 text-yume-ink2 hover:text-yume-ink flex items-center justify-center yume-btn" title="Salin Email" aria-label="Salin ${escapeHtml(item.email)}">
+                <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
               </button>
-              <button onclick="removeFromHistory('${escapeHtml(item.email)}')" class="p-1.5 rounded-lg bg-yume-slab hover:bg-rose-500/10 border border-yume-seam hover:border-rose-500/30 text-yume-mute hover:text-rose-400 yume-btn" title="Hapus dari Riwayat">
-                <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+              <button type="button" onclick="removeFromHistory('${escapeHtml(item.email)}')" class="min-w-[44px] min-h-[44px] w-11 h-11 rounded-lg bg-yume-slab hover:bg-rose-500/10 border border-yume-seam hover:border-rose-500/30 text-yume-mute hover:text-rose-400 flex items-center justify-center yume-btn" title="Hapus dari Riwayat" aria-label="Hapus ${escapeHtml(item.email)} dari riwayat">
+                <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
               </button>
             </div>
           </div>
@@ -560,9 +563,14 @@
       showToast(`Alamat "${email}" disalin!`, 'success');
     }
 
-    async function refreshHistoryStatuses() {
+    async function refreshHistoryStatuses(manual = false) {
       const history = getStoredHistory();
-      if (!history || history.length === 0) return;
+      if (!history || history.length === 0) {
+        if (manual) showToast('Belum ada riwayat email tersimpan.', 'info');
+        return;
+      }
+      const btn = document.getElementById('btnRefreshHistory');
+      if (manual && btn) btn.disabled = true;
       const emails = history.map(h => h.email);
       try {
         const res = await fetch('/api/v1/mailbox/batch-status', {
@@ -586,8 +594,13 @@
             saveStoredHistory(history);
             renderHistoryList();
           }
+          if (manual) showToast('Status riwayat diperbarui.', 'success');
         }
-      } catch (e) {}
+      } catch (e) {
+        if (manual) showToast('Gagal memperbarui status riwayat.', 'error');
+      } finally {
+        if (manual && btn) btn.disabled = false;
+      }
     }
 
     function showToast(msg, type = 'info') {
@@ -597,12 +610,11 @@
       const isSuccess = type === 'success';
       const isError = type === 'error';
       const borderCls = isSuccess
-        ? 'border-[#80ff20]/40 text-[#f4f4f1]'
-        : (isError ? 'border-rose-500/40 text-rose-200' : 'border-[#8be8cb]/35 text-[#f4f4f1]');
-      const dotCls = isSuccess ? 'bg-[#80ff20]' : (isError ? 'bg-rose-400' : 'bg-[#8be8cb]');
+        ? 'border-[#80ff20]/40 border-l-4 border-l-[#80ff20] text-[#f4f4f1]'
+        : (isError ? 'border-rose-500/40 border-l-4 border-l-rose-400 text-rose-200' : 'border-[#8be8cb]/35 border-l-4 border-l-[#8be8cb] text-[#f4f4f1]');
 
-      toast.className = `pointer-events-auto px-4 py-3 rounded-xl bg-[#14151b]/95 border backdrop-blur-md shadow-2xl text-xs font-mono flex items-center gap-2.5 transition-all duration-200 ${borderCls}`;
-      toast.innerHTML = `<span class="w-2 h-2 rounded-full ${dotCls}"></span><span>${escapeHtml(msg)}</span>`;
+      toast.className = `pointer-events-auto px-4 py-3 rounded-xl bg-[#14151b]/95 border backdrop-blur-md shadow-2xl text-xs font-mono flex items-center gap-2 transition-all duration-200 break-words ${borderCls}`;
+      toast.innerHTML = `<span class="min-w-0 flex-1">${escapeHtml(msg)}</span>`;
 
       container.appendChild(toast);
       setTimeout(() => {
@@ -614,11 +626,15 @@
 
     function switchTab(tab) {
       const isSearch = tab === 'search';
-      const activeCls = 'tab-btn flex items-center justify-center gap-2 py-2.5 px-4 rounded-lg text-xs font-mono font-semibold uppercase tracking-wider yume-btn bg-yume-xp text-yume-black';
-      const idleCls = 'tab-btn flex items-center justify-center gap-2 py-2.5 px-4 rounded-lg text-xs font-mono font-semibold uppercase tracking-wider yume-btn text-yume-mute hover:text-yume-ink hover:bg-yume-slab2';
+      const activeCls = 'tab-btn flex items-center justify-center gap-1.5 sm:gap-2 min-h-[44px] py-2.5 px-2.5 sm:px-4 rounded-lg text-[11px] sm:text-xs font-mono font-semibold uppercase tracking-wider yume-btn bg-yume-xp text-yume-black';
+      const idleCls = 'tab-btn flex items-center justify-center gap-1.5 sm:gap-2 min-h-[44px] py-2.5 px-2.5 sm:px-4 rounded-lg text-[11px] sm:text-xs font-mono font-semibold uppercase tracking-wider yume-btn text-yume-mute hover:text-yume-ink hover:bg-yume-slab2';
 
-      document.getElementById('tabSearch').className = isSearch ? activeCls : idleCls;
-      document.getElementById('tabCreate').className = !isSearch ? activeCls : idleCls;
+      const tabSearchEl = document.getElementById('tabSearch');
+      const tabCreateEl = document.getElementById('tabCreate');
+      tabSearchEl.className = isSearch ? activeCls : idleCls;
+      tabCreateEl.className = !isSearch ? activeCls : idleCls;
+      tabSearchEl.setAttribute('aria-selected', String(isSearch));
+      tabCreateEl.setAttribute('aria-selected', String(!isSearch));
 
       document.getElementById('panelSearch').classList.toggle('hidden', !isSearch);
       document.getElementById('panelCreate').classList.toggle('hidden', isSearch);
@@ -676,6 +692,8 @@
       let raw = (explicitUser || document.getElementById('searchUserInput').value || '').trim().toLowerCase();
       const selectedDomain = (document.getElementById('searchDomainSelect')?.value || 'enchant.id').trim().toLowerCase();
       const alertBox = document.getElementById('searchAlert');
+      const submitBtn = document.getElementById('btnSearchSubmit');
+      const submitLabel = submitBtn?.querySelector('span');
       alertBox.classList.add('hidden');
 
       let queryEmail = '';
@@ -693,6 +711,9 @@
         alertBox.classList.remove('hidden');
         return;
       }
+
+      if (submitBtn) submitBtn.disabled = true;
+      if (submitLabel) submitLabel.textContent = 'Membuka Kotak Masuk...';
 
       try {
         const res = await fetch(`/api/v1/mailbox/search?q=${encodeURIComponent(queryEmail)}`);
@@ -713,6 +734,9 @@
       } catch (err) {
         alertBox.textContent = 'Gagal menghubungi server.';
         alertBox.classList.remove('hidden');
+      } finally {
+        if (submitBtn) submitBtn.disabled = false;
+        if (submitLabel) submitLabel.textContent = 'Buka Kotak Masuk';
       }
     }
 
@@ -720,7 +744,12 @@
       let u = document.getElementById('createUserInput').value.trim().toLowerCase().replace(/[^a-z0-9_.-]/g, '');
       const domain = (document.getElementById('createDomainSelect')?.value || 'enchant.id').trim().toLowerCase();
       const alertBox = document.getElementById('createAlert');
+      const submitBtn = document.getElementById('btnCreateSubmit');
+      const submitLabel = submitBtn?.querySelector('span');
       alertBox.classList.add('hidden');
+
+      if (submitBtn) submitBtn.disabled = true;
+      if (submitLabel) submitLabel.textContent = 'Membuat Mailbox...';
 
       try {
         const res = await fetch('/api/v1/mailbox/create', {
@@ -743,6 +772,9 @@
       } catch (err) {
         alertBox.textContent = 'Error koneksi ke server.';
         alertBox.classList.remove('hidden');
+      } finally {
+        if (submitBtn) submitBtn.disabled = false;
+        if (submitLabel) submitLabel.textContent = 'Buat & Aktifkan Mailbox';
       }
     }
 
@@ -768,8 +800,14 @@
       pollInterval = setInterval(fetchCurrentInbox, 4000);
     }
 
-    async function fetchCurrentInbox() {
+    async function fetchCurrentInbox(manual = false) {
       if (!activeMailbox) return;
+      const btn = document.getElementById('btnRefreshInbox');
+      const label = btn?.querySelector('span');
+      if (manual && btn) {
+        btn.disabled = true;
+        if (label) label.textContent = 'Memuat...';
+      }
       try {
         const res = await fetch(`/api/v1/mailbox/search?q=${encodeURIComponent(activeMailbox)}`);
         const data = await res.json();
@@ -777,8 +815,16 @@
           messages = data.messages || [];
           renderMessages();
           updateHistoryMsgCount(activeMailbox, messages.length);
+          if (manual) showToast('Kotak masuk diperbarui.', 'success');
         }
-      } catch (e) {}
+      } catch (e) {
+        if (manual) showToast('Gagal menyegarkan kotak masuk.', 'error');
+      } finally {
+        if (manual && btn) {
+          btn.disabled = false;
+          if (label) label.textContent = 'Segarkan';
+        }
+      }
     }
 
     function renderMessages() {
@@ -789,7 +835,7 @@
       if (!messages || messages.length === 0) {
         container.innerHTML = `
           <div class="py-12 px-4 text-center text-yume-mute font-mono text-xs flex flex-col items-center gap-3 bg-[#0e0f15] rounded-xl border border-yume-seam">
-            <svg class="w-7 h-7 text-yume-seam2" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="12" r="10"/><path d="m4.93 4.93 4.24 4.24"/><path d="m14.83 9.17 4.24-4.24"/><path d="m14.83 14.83 4.24 4.24"/><path d="m9.17 14.83-4.24 4.24"/></svg>
+            <svg class="w-7 h-7 text-yume-seam2" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="m4.93 4.93 4.24 4.24"/><path d="m14.83 9.17 4.24-4.24"/><path d="m14.83 14.83 4.24 4.24"/><path d="m9.17 14.83-4.24 4.24"/></svg>
             <span>Belum ada email masuk.<br>Email akan otomatis muncul di sini.</span>
           </div>
         `;
@@ -799,20 +845,17 @@
       container.innerHTML = messages.map(m => {
         let timeStr = new Date(m.receivedAt).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
         let otpMatch = m.text ? m.text.match(/\b\d{4,6}\b/) : null;
-        let otpBadge = otpMatch ? `<span class="px-2 py-0.5 rounded bg-[#123120] border border-yume-xp/30 text-yume-xp font-mono text-[10px] font-bold">OTP: ${escapeHtml(otpMatch[0])}</span>` : '';
+        let otpBadge = otpMatch ? `<span class="px-2 py-0.5 rounded bg-[#123120] border border-yume-xp/30 text-yume-xp font-mono text-[10px] font-bold flex-shrink-0">OTP: ${escapeHtml(otpMatch[0])}</span>` : '';
 
         return `
-          <div class="p-4 rounded-xl bg-[#0e0f15] hover:bg-yume-slab2 border border-yume-seam hover:border-yume-xp/50 cursor-pointer yume-btn" onclick="openMsgModal('${escapeHtml(m.id)}')">
-            <div class="flex items-center justify-between mb-1.5">
-              <div class="flex items-center gap-2 min-w-0">
-                <span class="w-2 h-2 rounded-full bg-yume-xp flex-shrink-0"></span>
-                <span class="text-xs font-mono font-semibold text-yume-ink truncate max-w-[200px] sm:max-w-[280px]">${escapeHtml(m.from || 'No Sender')}</span>
-              </div>
+          <div role="button" tabindex="0" class="min-h-[44px] p-3.5 sm:p-4 rounded-xl bg-[#0e0f15] hover:bg-yume-slab2 border border-yume-seam hover:border-yume-xp/50 cursor-pointer yume-btn" onclick="openMsgModal('${escapeHtml(m.id)}')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();openMsgModal('${escapeHtml(m.id)}')}">
+            <div class="flex items-center justify-between gap-2 mb-1.5 min-w-0">
+              <span class="text-xs font-mono font-semibold text-yume-ink truncate min-w-0 flex-1">${escapeHtml(m.from || 'No Sender')}</span>
               <span class="text-[11px] font-mono text-yume-mute flex-shrink-0">${timeStr}</span>
             </div>
             <div class="text-sm font-semibold text-yume-ink truncate mb-1">${escapeHtml(m.subject || '(Tanpa Subjek)')}</div>
-            <div class="flex items-center justify-between gap-2">
-              <span class="text-xs text-yume-mute truncate flex-1">${escapeHtml(m.text ? m.text.substring(0, 75) : '')}...</span>
+            <div class="flex flex-wrap items-center justify-between gap-2 min-w-0">
+              <span class="text-xs text-yume-mute truncate min-w-0 flex-1">${escapeHtml(m.text ? m.text.substring(0, 75) : '')}${m.text && m.text.length > 75 ? '...' : ''}</span>
               ${otpBadge}
             </div>
           </div>
@@ -860,12 +903,13 @@
 
       const content = document.getElementById('modalContent');
       if (msg.html) {
-        content.innerHTML = `<iframe sandbox="allow-popups allow-popups-to-escape-sandbox" srcdoc="${escapeHtml(msg.html)}" class="w-full h-80 rounded-xl border border-yume-seam bg-white"></iframe>`;
+        content.innerHTML = `<iframe sandbox="allow-popups allow-popups-to-escape-sandbox" srcdoc="${escapeHtml(msg.html)}" class="w-full h-64 sm:h-80 rounded-xl border border-yume-seam bg-white"></iframe>`;
       } else {
-        content.innerHTML = `<pre class="p-4 rounded-xl bg-yume-slab border border-yume-seam font-mono text-xs text-yume-ink2 whitespace-pre-wrap leading-relaxed">${escapeHtml(msg.text || '')}</pre>`;
+        content.innerHTML = `<pre class="p-3.5 sm:p-4 rounded-xl bg-yume-slab border border-yume-seam font-mono text-xs text-yume-ink2 whitespace-pre-wrap break-words leading-relaxed overflow-x-auto">${escapeHtml(msg.text || '')}</pre>`;
       }
 
-      document.getElementById('msgModal').classList.remove('hidden');
+      const modal = document.getElementById('msgModal');
+      modal.classList.remove('hidden');
     }
 
     function closeModalDirect() {
@@ -875,6 +919,15 @@
     function closeModal(e) {
       if (e.target.id === 'msgModal') closeModalDirect();
     }
+
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') {
+        const modal = document.getElementById('msgModal');
+        if (modal && !modal.classList.contains('hidden')) {
+          closeModalDirect();
+        }
+      }
+    });
 
     function copyCurrentEmail() {
       const email = document.getElementById('currentActiveEmail').textContent;
@@ -897,18 +950,40 @@
 
     async function deleteCurrentMsg() {
       if (!currentMsgId) return;
-      messages = messages.filter(m => m.id !== currentMsgId);
-      renderMessages();
-      closeModalDirect();
-      showToast('Pesan dihapus!', 'info');
+      try {
+        const res = await fetch(`/api/v1/mail/message/${encodeURIComponent(currentMsgId)}`, { method: 'DELETE' });
+        const data = await res.json();
+        if (!res.ok || !data.success) {
+          showToast('Gagal menghapus pesan di server.', 'error');
+          return;
+        }
+        messages = messages.filter(m => m.id !== currentMsgId);
+        renderMessages();
+        if (activeMailbox) updateHistoryMsgCount(activeMailbox, messages.length);
+        closeModalDirect();
+        showToast('Pesan dihapus!', 'info');
+      } catch (e) {
+        showToast('Gagal menghubungi server.', 'error');
+      }
     }
 
     async function clearCurrentInbox() {
+      if (!activeMailbox) return;
       if (!confirm('Hapus seluruh pesan di mailbox ini?')) return;
-      messages = [];
-      renderMessages();
-      updateHistoryMsgCount(activeMailbox, 0);
-      showToast('Inbox dibersihkan!', 'info');
+      try {
+        const res = await fetch(`/api/v1/mail/inbox?email=${encodeURIComponent(activeMailbox)}`, { method: 'DELETE' });
+        const data = await res.json();
+        if (!res.ok || !data.success) {
+          showToast('Gagal membersihkan inbox di server.', 'error');
+          return;
+        }
+        messages = [];
+        renderMessages();
+        updateHistoryMsgCount(activeMailbox, 0);
+        showToast('Inbox dibersihkan!', 'info');
+      } catch (e) {
+        showToast('Gagal menghubungi server.', 'error');
+      }
     }
 
     function escapeHtml(str) {
