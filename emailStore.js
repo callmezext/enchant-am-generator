@@ -231,6 +231,7 @@ class EmailStore extends EventEmitter {
     const content = (text || '') + ' ' + (html || '');
     // Explicit OTP keywords only so timestamps/years like 2026 are never mistaken for OTP
     const explicitMatch = content.match(/(?:otp|verification code|kode verifikasi|kode otp|security code|pin code)\s*(?:is|:|\s)\s*([0-9]{4,8})/i)
+      || content.match(/(?:kode\s+[a-z]+\s+anda\s+adalah|your\s+[a-z]+\s+code\s+is)\s*[:\s]*([0-9]{4,8})/i)
       || content.match(/(?:kode|code)\s*(?:is|:)\s*([A-Za-z0-9]{4,8})/i);
     return explicitMatch ? explicitMatch[1] : null;
   }

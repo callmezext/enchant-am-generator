@@ -227,6 +227,46 @@
       </div>
     </div>
 
+    <!-- ================= RIWAYAT MAILBOX SECTION ================= -->
+    <div class="w-full yume-slab rounded-2xl p-5 sm:p-7 mb-6" id="historyCard">
+      <div class="flex items-center justify-between pb-4 mb-4 border-b border-yume-seam">
+        <div class="flex items-center gap-2.5">
+          <div class="w-8 h-8 rounded-lg bg-yume-slab2 border border-yume-seam flex items-center justify-center text-yume-xp shadow-[0_0_12px_rgba(128,255,32,0.12)]">
+            <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="10"/>
+              <polyline points="12 6 12 12 16 14"/>
+            </svg>
+          </div>
+          <div>
+            <div class="flex items-center gap-2">
+              <h2 class="text-xs font-bold font-mono uppercase tracking-widest text-yume-ink">Riwayat Mailbox Saya</h2>
+              <span class="px-2 py-0.5 rounded-full bg-yume-slab2 border border-yume-seam text-yume-xp font-mono text-[10px] font-semibold" id="historyCountBadge">0 Disimpan</span>
+            </div>
+            <p class="text-[11px] text-yume-mute font-mono mt-0.5">Daftar email yang pernah Anda buat &amp; akses di browser ini</p>
+          </div>
+        </div>
+
+        <div class="flex items-center gap-1.5 sm:gap-2">
+          <button onclick="refreshHistoryStatuses()" class="p-2 rounded-lg bg-yume-slab2 hover:bg-yume-seam border border-yume-seam2 text-yume-ink2 hover:text-yume-ink yume-btn" title="Cek Status Semua Email">
+            <svg class="w-3.5 h-3.5 text-yume-mint" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+          </button>
+          <button onclick="clearAllHistory()" class="px-2.5 py-1.5 rounded-lg text-yume-mute hover:text-rose-300 hover:bg-[#351822]/60 border border-yume-seam hover:border-rose-500/30 font-mono text-[11px] transition-colors yume-btn" title="Hapus Semua Riwayat">
+            Bersihkan
+          </button>
+        </div>
+      </div>
+
+      <!-- Filter input (shows if items > 3) -->
+      <div id="historyFilterContainer" class="hidden mb-3">
+        <input type="text" id="historyFilterInput" oninput="filterHistoryList()" placeholder="Cari dalam riwayat email..." class="w-full bg-[#0e0f15] border border-yume-seam focus:border-yume-xp rounded-xl px-3.5 py-2 text-xs font-mono text-yume-ink placeholder-yume-mute/60 outline-none transition-colors">
+      </div>
+
+      <!-- History Items Container -->
+      <div class="flex flex-col gap-2 max-h-[380px] overflow-y-auto pr-1" id="historyListContainer">
+        <!-- Dynamically injected -->
+      </div>
+    </div>
+
     <!-- Footer Ecosystem Links -->
     <div class="w-full flex flex-wrap items-center justify-between gap-3 pt-2 text-xs font-mono text-yume-mute">
       <a href="https://yume.tech" class="hover:text-yume-xp transition-colors inline-flex items-center gap-1.5">
@@ -305,6 +345,254 @@
     let pollInterval = null;
     let currentActiveLoginLink = '';
 
+    // ===== RIWAYAT MAILBOX (HISTORY) MANAGER =====
+    const HISTORY_STORAGE_KEY = 'yume_mail_history_v1';
+    let historyFilterQuery = '';
+
+    function getStoredHistory() {
+      try {
+        const raw = localStorage.getItem(HISTORY_STORAGE_KEY);
+        if (!raw) return [];
+        const parsed = JSON.parse(raw);
+        return Array.isArray(parsed) ? parsed : [];
+      } catch (e) {
+        return [];
+      }
+    }
+
+    function saveStoredHistory(list) {
+      try {
+        const trimmed = (list || []).slice(0, 40);
+        localStorage.setItem(HISTORY_STORAGE_KEY, JSON.stringify(trimmed));
+      } catch (e) {}
+    }
+
+    function addToHistory(email, username, domain, messageCount = 0) {
+      if (!email || typeof email !== 'string') return;
+      const cleanEmail = email.trim().toLowerCase();
+      if (!cleanEmail.includes('@')) return;
+
+      let history = getStoredHistory();
+      const existingIdx = history.findIndex(item => item.email.toLowerCase() === cleanEmail);
+
+      const d = domain || cleanEmail.split('@')[1] || 'enchant.id';
+      const u = username || cleanEmail.split('@')[0];
+
+      if (existingIdx !== -1) {
+        const existing = history[existingIdx];
+        existing.lastOpened = new Date().toISOString();
+        if (typeof messageCount === 'number') existing.messageCount = messageCount;
+        history.splice(existingIdx, 1);
+        history.unshift(existing);
+      } else {
+        history.unshift({
+          email: cleanEmail,
+          username: u,
+          domain: d,
+          createdAt: new Date().toISOString(),
+          lastOpened: new Date().toISOString(),
+          messageCount: typeof messageCount === 'number' ? messageCount : 0
+        });
+      }
+
+      saveStoredHistory(history);
+      renderHistoryList();
+    }
+
+    function updateHistoryMsgCount(email, count) {
+      if (!email) return;
+      const cleanEmail = email.trim().toLowerCase();
+      let history = getStoredHistory();
+      const item = history.find(h => h.email.toLowerCase() === cleanEmail);
+      if (item && item.messageCount !== count) {
+        item.messageCount = count;
+        item.lastOpened = new Date().toISOString();
+        saveStoredHistory(history);
+        renderHistoryList();
+      }
+    }
+
+    function removeFromHistory(email) {
+      if (!email) return;
+      const cleanEmail = email.trim().toLowerCase();
+      let history = getStoredHistory();
+      history = history.filter(item => item.email.toLowerCase() !== cleanEmail);
+      saveStoredHistory(history);
+      renderHistoryList();
+      showToast(`Email ${cleanEmail} dihapus dari riwayat`, 'info');
+    }
+
+    function clearAllHistory() {
+      const history = getStoredHistory();
+      if (!history || history.length === 0) {
+        showToast('Riwayat email sudah kosong.', 'info');
+        return;
+      }
+      if (!confirm('Hapus seluruh riwayat email dari browser ini?')) return;
+      localStorage.removeItem(HISTORY_STORAGE_KEY);
+      renderHistoryList();
+      showToast('Riwayat email berhasil dibersihkan!', 'info');
+    }
+
+    function formatRelativeTime(isoString) {
+      if (!isoString) return '';
+      try {
+        const d = new Date(isoString);
+        if (isNaN(d.getTime())) return '';
+        const now = new Date();
+        const diffSec = Math.floor((now - d) / 1000);
+        if (diffSec < 45) return 'Baru saja';
+        if (diffSec < 3600) return `${Math.floor(diffSec / 60)} mnt lalu`;
+        if (diffSec < 86400) return `${Math.floor(diffSec / 3600)} jam lalu`;
+        return d.toLocaleDateString('id-ID', { day: 'numeric', month: 'short' });
+      } catch (e) {
+        return '';
+      }
+    }
+
+    function filterHistoryList() {
+      historyFilterQuery = (document.getElementById('historyFilterInput')?.value || '').trim().toLowerCase();
+      renderHistoryList();
+    }
+
+    function renderHistoryList() {
+      const container = document.getElementById('historyListContainer');
+      const countBadge = document.getElementById('historyCountBadge');
+      const filterBox = document.getElementById('historyFilterContainer');
+      if (!container) return;
+
+      const fullHistory = getStoredHistory();
+      if (countBadge) countBadge.textContent = `${fullHistory.length} Disimpan`;
+
+      if (filterBox) {
+        filterBox.classList.toggle('hidden', fullHistory.length < 4);
+      }
+
+      let displayed = fullHistory;
+      if (historyFilterQuery) {
+        displayed = displayed.filter(item =>
+          item.email.toLowerCase().includes(historyFilterQuery) ||
+          item.username.toLowerCase().includes(historyFilterQuery) ||
+          item.domain.toLowerCase().includes(historyFilterQuery)
+        );
+      }
+
+      if (!displayed || displayed.length === 0) {
+        if (fullHistory.length === 0) {
+          container.innerHTML = `
+            <div class="py-7 px-4 text-center text-yume-mute font-mono text-xs flex flex-col items-center gap-2 bg-[#0e0f15] rounded-xl border border-yume-seam">
+              <svg class="w-6 h-6 text-yume-seam2" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+              <span>Belum ada riwayat email.<br>Email yang Anda buat atau cari akan otomatis tersimpan di sini.</span>
+            </div>
+          `;
+        } else {
+          container.innerHTML = `
+            <div class="py-6 px-4 text-center text-yume-mute font-mono text-xs bg-[#0e0f15] rounded-xl border border-yume-seam">
+              Tidak ada email yang cocok dengan "${escapeHtml(historyFilterQuery)}".
+            </div>
+          `;
+        }
+        return;
+      }
+
+      container.innerHTML = displayed.map(item => {
+        const timeStr = formatRelativeTime(item.lastOpened || item.createdAt);
+        const count = typeof item.messageCount === 'number' ? item.messageCount : 0;
+        const countPill = count > 0
+          ? `<span class="px-2 py-0.5 rounded-full bg-[#123120] border border-yume-xp/35 text-yume-xp font-mono text-[10px] font-bold shadow-[0_0_8px_rgba(128,255,32,0.18)]">${count} Pesan</span>`
+          : `<span class="px-1.5 py-0.5 rounded text-[10px] font-mono text-yume-mute/80 bg-yume-slab2">0 Pesan</span>`;
+
+        return `
+          <div class="p-3 sm:p-3.5 rounded-xl bg-[#0e0f15] hover:bg-yume-slab2 border border-yume-seam hover:border-yume-seam2 flex flex-col sm:flex-row sm:items-center justify-between gap-3 transition-colors group">
+            <div class="flex items-center gap-3 min-w-0">
+              <div class="w-8 h-8 rounded-lg bg-yume-slab border border-yume-seam flex items-center justify-center flex-shrink-0 group-hover:border-yume-xp/40 transition-colors">
+                <svg class="w-4 h-4 text-yume-mint" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
+                  <polyline points="22,6 12,13 2,6"/>
+                </svg>
+              </div>
+              <div class="min-w-0">
+                <div class="flex items-center gap-2 flex-wrap">
+                  <span class="font-mono text-xs sm:text-sm font-bold text-yume-ink group-hover:text-yume-xp transition-colors truncate">
+                    ${escapeHtml(item.email)}
+                  </span>
+                  <span class="px-1.5 py-0.5 rounded text-[10px] font-mono bg-yume-mintsoft text-yume-mint border border-yume-mint/20">
+                    @${escapeHtml(item.domain)}
+                  </span>
+                  ${countPill}
+                </div>
+                <div class="flex items-center gap-2 mt-0.5 text-[10px] font-mono text-yume-mute">
+                  ${timeStr ? `<span>Terakhir: ${escapeHtml(timeStr)}</span>` : ''}
+                </div>
+              </div>
+            </div>
+
+            <div class="flex items-center gap-1.5 self-end sm:self-center flex-shrink-0">
+              <button onclick="openFromHistory('${escapeHtml(item.email)}')" class="px-3 py-1.5 rounded-lg bg-yume-xp hover:bg-yume-xphover text-yume-black font-mono font-bold text-xs flex items-center gap-1 yume-btn">
+                <svg class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><polyline points="9 18 15 12 9 6"/></svg>
+                <span>Buka</span>
+              </button>
+              <button onclick="copyEmailDirect('${escapeHtml(item.email)}')" class="p-1.5 rounded-lg bg-yume-slab border border-yume-seam hover:border-yume-seam2 text-yume-ink2 hover:text-yume-ink yume-btn" title="Salin Email">
+                <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+              </button>
+              <button onclick="removeFromHistory('${escapeHtml(item.email)}')" class="p-1.5 rounded-lg bg-yume-slab hover:bg-rose-500/10 border border-yume-seam hover:border-rose-500/30 text-yume-mute hover:text-rose-400 yume-btn" title="Hapus dari Riwayat">
+                <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+              </button>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    async function openFromHistory(email) {
+      if (!email) return;
+      switchTab('search');
+      document.getElementById('searchUserInput').value = email;
+      await doSearchMailbox(email);
+      setTimeout(() => {
+        const inboxCard = document.getElementById('inboxCard');
+        if (inboxCard && !inboxCard.classList.contains('hidden')) {
+          inboxCard.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+      }, 100);
+    }
+
+    function copyEmailDirect(email) {
+      if (!email) return;
+      navigator.clipboard.writeText(email);
+      showToast(`Alamat "${email}" disalin!`, 'success');
+    }
+
+    async function refreshHistoryStatuses() {
+      const history = getStoredHistory();
+      if (!history || history.length === 0) return;
+      const emails = history.map(h => h.email);
+      try {
+        const res = await fetch('/api/v1/mailbox/batch-status', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ emails })
+        });
+        const data = await res.json();
+        if (data.success && data.statuses) {
+          let updated = false;
+          history.forEach(item => {
+            const stat = data.statuses[item.email.toLowerCase()] || data.statuses[item.email];
+            if (stat && typeof stat.messageCount === 'number') {
+              if (item.messageCount !== stat.messageCount) {
+                item.messageCount = stat.messageCount;
+                updated = true;
+              }
+            }
+          });
+          if (updated) {
+            saveStoredHistory(history);
+            renderHistoryList();
+          }
+        }
+      } catch (e) {}
+    }
+
     function showToast(msg, type = 'info') {
       const container = document.getElementById('toast-container');
       const toast = document.createElement('div');
@@ -343,7 +631,9 @@
     }
 
     window.addEventListener('DOMContentLoaded', async () => {
+      renderHistoryList();
       await loadSupportedDomains();
+      refreshHistoryStatuses();
 
       const urlParams = new URLSearchParams(window.location.search);
       const searchParam = urlParams.get('search');
@@ -421,6 +711,7 @@
         }
 
         openMailboxView(data.email, data.email, data.messages);
+        addToHistory(data.email, data.username, data.domain, (data.messages || []).length);
         showToast(`Mailbox "${data.email}" aktif!`, 'success');
       } catch (err) {
         alertBox.textContent = 'Gagal menghubungi server.';
@@ -450,6 +741,7 @@
 
         document.getElementById('createUserInput').value = data.username;
         openMailboxView(data.email, data.email, []);
+        addToHistory(data.email, data.username, data.domain, 0);
         showToast(`Mailbox "${data.email}" siap digunakan!`, 'success');
       } catch (err) {
         alertBox.textContent = 'Error koneksi ke server.';
@@ -458,10 +750,12 @@
     }
 
     function randomizeCreateInput() {
-      const prefixes = ['user', 'am', 'vip', 'edit', 'pro', 'alex', 'sky', 'neo', 'zen'];
-      const p = prefixes[Math.floor(Math.random() * prefixes.length)];
-      const rand = Math.random().toString(36).substring(2, 7);
-      document.getElementById('createUserInput').value = `${p}_${rand}`;
+      const firsts = ['budi', 'yadi', 'andi', 'rizky', 'dimas', 'bagas', 'fajar', 'ilham', 'arif', 'hendra', 'siti', 'dini', 'putri', 'nadia', 'rina', 'dewi', 'ayu', 'maya', 'sari', 'citra'];
+      const lasts = ['santoso', 'pratama', 'wijaya', 'saputra', 'kusuma', 'maulana', 'hidayat', 'nugroho', 'setiawan', 'rahma', 'lestari', 'permata', 'anggraini', 'utami', 'kartika'];
+      const f = firsts[Math.floor(Math.random() * firsts.length)];
+      const l = lasts[Math.floor(Math.random() * lasts.length)];
+      const useNum = Math.random() < 0.35 ? String(Math.floor(10 + Math.random() * 89)) : '';
+      document.getElementById('createUserInput').value = `${f}${l}${useNum}`;
     }
 
     function openMailboxView(username, email, msgs) {
@@ -485,6 +779,7 @@
         if (data.success && data.exists) {
           messages = data.messages || [];
           renderMessages();
+          updateHistoryMsgCount(activeMailbox, messages.length);
         }
       } catch (e) {}
     }
@@ -615,6 +910,7 @@
       if (!confirm('Hapus seluruh pesan di mailbox ini?')) return;
       messages = [];
       renderMessages();
+      updateHistoryMsgCount(activeMailbox, 0);
       showToast('Inbox dibersihkan!', 'info');
     }
 

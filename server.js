@@ -87,9 +87,47 @@ app.use((req, res, next) => {
 app.get(['/mail', '/mail/:u'], (req, res) => res.sendFile(path.join(__dirname, 'public', 'mail.html')));
 app.use(express.static(path.join(__dirname, 'public')));
 
+const FIRST_NAMES = ['budi','yadi','andi','rizky','dimas','bagas','fajar','ilham','arif','hendra','siti','dini','putri','nadia','rina','dewi','ayu','maya','sari','citra'];
+const LAST_NAMES = ['santoso','pratama','wijaya','saputra','kusuma','maulana','hidayat','nugroho','setiawan','rahma','lestari','permata','anggraini','utami','kartika'];
+
+function generateHumanUsername(domain = 'enchant.id') {
+  for (let i = 0; i < 8; i++) {
+    const first = FIRST_NAMES[crypto.randomInt(FIRST_NAMES.length)];
+    const last = LAST_NAMES[crypto.randomInt(LAST_NAMES.length)];
+    const candidate = i < 4 ? `${first}${last}` : `${first}${last}${crypto.randomInt(10, 99)}`;
+    const key = emailStore.normalizeKey(candidate, domain);
+    if (!emailStore.isMailboxRegistered(key)) return candidate;
+  }
+  const first = FIRST_NAMES[crypto.randomInt(FIRST_NAMES.length)];
+  const last = LAST_NAMES[crypto.randomInt(LAST_NAMES.length)];
+  return `${first}${last}${crypto.randomInt(100, 999)}`;
+}
+
 // ===== TEMP MAIL API =====
 app.get(['/api/v1/domains', '/api/domains'], (req, res) => {
   res.json({ success: true, domains: emailStore.getDomains() });
+});
+
+app.post(['/api/v1/mailbox/batch-status', '/api/mailbox/batch-status'], (req, res) => {
+  const emails = Array.isArray(req.body && req.body.emails) ? req.body.emails : [];
+  const statuses = {};
+  emails.slice(0, 50).forEach(raw => {
+    if (!raw || typeof raw !== 'string') return;
+    const key = emailStore.normalizeKey(raw);
+    if (key && emailStore.isMailboxRegistered(key)) {
+      const full = emailStore.keyToEmail(key);
+      statuses[full] = {
+        exists: true,
+        messageCount: (emailStore.inboxes.get(key) || []).length
+      };
+    } else {
+      statuses[raw.trim().toLowerCase()] = {
+        exists: false,
+        messageCount: 0
+      };
+    }
+  });
+  res.json({ success: true, statuses });
 });
 
 app.get(['/api/v1/mailbox/search', '/api/mailbox/search'], (req, res) => {
@@ -134,7 +172,7 @@ app.post(['/api/v1/mailbox/create', '/api/mailbox/create'], (req, res) => {
     }
   }
   if (username) username = String(username).toLowerCase().trim().replace(/[^a-z0-9_.-]/g, '');
-  if (!username) username = 'user_' + crypto.randomBytes(4).toString('hex');
+  if (!username) username = generateHumanUsername(domain);
 
   const key = emailStore.normalizeKey(username, domain);
   const isNew = !emailStore.isMailboxRegistered(key);
